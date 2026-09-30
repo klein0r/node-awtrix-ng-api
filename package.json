@@ -1,7 +1,7 @@
 {
   "name": "awtrix-ng-api",
   "version": "0.1.0",
-  "description": "Type-safe HTTP API client for AWTRIX NG LED matrix clocks (Node.js, TypeScript, axios)",
+  "description": "Type-safe HTTP API client for AWTRIX NG matrix clocks (Node.js, TypeScript, axios)",
   "keywords": [
     "awtrix",
     "awtrix-ng",
@@ -12,8 +12,16 @@
     "api-client",
     "typescript"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/klein0r/node-awtrix-ng-api.git"
+  },
   "license": "MIT",
-  "author": "Matthias Kleine",
+  "author": {
+    "name": "Matthias Kleine",
+    "email": "info@haus-automatisierung.com"
+  },
+  "homepage": "https://github.com/klein0r/node-awtrix-ng-api",
   "type": "commonjs",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -38,7 +46,7 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
     "clean": "node scripts/clean.mjs",
