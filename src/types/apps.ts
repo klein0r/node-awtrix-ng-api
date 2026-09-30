@@ -3,7 +3,7 @@ import type { AppName } from './common.js';
 export type AppOrigin = 'builtin' | 'pushed' | 'script' | 'module';
 
 /** Built-in app names. Temperature, Humidity and Battery depend on the hardware. */
-export type BuiltinAppName = 'Time' | 'Date' | 'Temperature' | 'Humidity' | 'Battery';
+export type BuiltinAppName = 'Time' | 'Date' | 'Temperature' | 'Humidity' | 'Battery' | 'Status';
 
 /** A script error, as reported in the app inventory and by script writes. */
 export interface ScriptError {
@@ -15,6 +15,32 @@ export interface ScriptError {
   hook?: 'setup' | 'loop' | 'draw' | 'on_show' | 'on_hide' | 'on_button' | 'should_show' | (string & {});
 }
 
+/** A `@requires` header entry: a script or module this script needs. */
+export interface ScriptRequirement {
+  /** A script's install name or a module's import name. */
+  name: string;
+  /** AWTRIX Hub ID, when the header gives one. */
+  hub?: string;
+  /** True while nothing installed provides it. */
+  missing: boolean;
+}
+
+/** A `@needs` header entry: a capability this script asks for. */
+export interface ScriptNeed {
+  /** Dotted path of a boolean in `GET /api/v1/capabilities`, e.g. `gamepad` or `audio.mixer`. */
+  name: string;
+  /** True while this display does not have it. */
+  missing: boolean;
+}
+
+/** The smallest panel from the `@display` header. */
+export interface ScriptDisplayRequirement {
+  width: number;
+  height: number;
+  /** True when this display is at least that large. */
+  fits: boolean;
+}
+
 /** Metadata from a script's `@` header lines; each string is `""` when absent. */
 export interface ScriptMeta {
   name: string;
@@ -23,6 +49,12 @@ export interface ScriptMeta {
   version: string;
   /** Icon IDs from the `@icons` header. */
   icons: string[];
+  /** Since 1.1.4. */
+  requires?: ScriptRequirement[];
+  /** Since 1.1.4. */
+  needs?: ScriptNeed[];
+  /** Since 1.1.4. `null` when the script runs on any panel. */
+  display?: ScriptDisplayRequirement | null;
 }
 
 interface AppInfoBase {
@@ -53,6 +85,8 @@ export interface ScriptAppInfo extends AppInfoBase {
   skipped?: boolean;
   /** Carries `@headless true` and never draws. */
   headless?: boolean;
+  /** Since 1.1.4: carries `@ondemand` - runs only when started via `switchTo()` or the device menu. */
+  ondemand?: boolean;
   /** Declares settings, so `GET /api/v1/apps/{name}/config` has fields. */
   config?: boolean;
   /** `null` while healthy. */
@@ -171,6 +205,31 @@ export interface ScriptConfig {
  * packed number or a `"#RRGGBB"` string; numbers outside `min`/`max` are clamped.
  */
 export type ScriptConfigUpdate = Record<string, string | number | boolean>;
+
+/** A JSON value as stored by a script with `store.set()`. */
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+/** `GET /api/v1/apps/{name}/data` - what a script saved, without its `@config` settings. */
+export type ScriptData = Record<string, JsonValue>;
+
+/** `PATCH /api/v1/apps/{name}/data` body - a value replaces or adds a key, `null` removes it. */
+export type ScriptDataUpdate = Record<string, JsonValue>;
+
+/** One of a script's own sounds. */
+export interface ScriptSoundFile {
+  /** With `.mp3`. */
+  name: string;
+  size: number;
+  /** Lowercase hex SHA-256 of the stored bytes. */
+  sha256: string;
+}
+
+/** `GET /api/v1/apps/script/{name}/sounds`. */
+export interface ScriptSoundList {
+  files: ScriptSoundFile[];
+  usedBytes: number;
+  totalBytes: number;
+}
 
 interface SharedValueBase {
   /** Install name of the script that wrote it. */

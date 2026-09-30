@@ -88,6 +88,7 @@ const STATUS_CODES: Record<number, AwtrixErrorCode> = {
   415: 'unsupportedMediaType',
   422: 'validationFailed',
   500: 'internalError',
+  501: 'notSupported',
   503: 'unavailable',
   507: 'insufficientStorage',
 };

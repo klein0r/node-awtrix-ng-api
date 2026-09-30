@@ -1,7 +1,8 @@
-import type { ColorInput } from './common.js';
+import type { ColorInput, LooseString } from './common.js';
+import type { NativeLayout } from './layout.js';
 import type { EffectName, OverlayName, Palette, ScrollInput } from './visuals.js';
 
-/** A color field that can also be painted from the app's {@link AppPayload.palette}. */
+/** A color field that can also be painted from the app's palette. */
 export type PaletteColorInput = ColorInput | 'palette';
 
 /** A run of text in its own color. */
@@ -13,7 +14,7 @@ export interface TextFragment {
 
 /** An additional, independently animated icon at an absolute position. */
 export interface PlacedIcon {
-  /** Icon ID (up to 64 chars) or inline base64 GIF/JPEG (longer than 64 chars). */
+  /** Icon ID (up to 64 chars) or a data URL (`data:image/gif;base64,...` / `data:image/jpeg;base64,...`). */
   icon: string;
   /** `-65535..65535`, default `0`. */
   x?: number;
@@ -22,7 +23,8 @@ export interface PlacedIcon {
 }
 
 export type TextCase = 'inherit' | 'upper' | 'asTyped';
-export type FontName = 'small' | 'large';
+/** `small`, `large` or (since 1.1.4) any name from `capabilities.fonts`. */
+export type FontName = LooseString<'small' | 'large'>;
 export type IconMode = 'fixed' | 'pushOnce' | 'push';
 export type LifetimeExpiry = 'remove' | 'mark';
 
@@ -71,11 +73,23 @@ export type DrawCommand =
 /* Payload                                                                                    */
 /* ------------------------------------------------------------------------------------------ */
 
+/** Keys that control how long a page lives; allowed with and without a `layout`. */
+export interface PayloadTiming {
+  /** How long to show the page in ms; `<= 0` uses the global `appDurationMs`. */
+  durationMs?: number;
+  /** Pushed apps only: auto-expire after this many ms, `0` = never. */
+  lifetimeMs?: number;
+  /** What happens when {@link lifetimeMs} runs out. Default `remove`. */
+  lifetimeExpiry?: LifetimeExpiry;
+  /** How many times scrolling text runs across the screen, `0` = off. */
+  repeat?: number;
+}
+
 /**
- * The page description shared by pushed apps and notifications (35 keys). Every key is
+ * The classic page description shared by pushed apps and notifications. Every key is
  * optional; unknown keys are rejected by the device with `422 validationFailed`.
  */
-export interface AppPayload {
+export interface ClassicAppPayload extends PayloadTiming {
   /* --- Text --- */
   /** The page text, or an array of individually colored fragments. */
   text?: string | readonly TextFragment[];
@@ -99,7 +113,11 @@ export interface AppPayload {
   textInFront?: boolean;
 
   /* --- Icon --- */
-  /** Icon ID (resolved as `/ICONS/<id>.gif`, then `.jpg`) or inline base64 when longer than 64 chars. */
+  /**
+   * Icon ID (resolved as `/ICONS/<id>.gif`, then `.jpg`) or the image as a data URL
+   * (`data:image/gif;base64,...` / `data:image/jpeg;base64,...`). Firmware before 1.1.4 took
+   * plain base64 longer than 64 characters instead.
+   */
   icon?: string;
   /** Whether approaching text shoves the icon aside. Default `fixed`. */
   iconMode?: IconMode;
@@ -109,16 +127,6 @@ export interface AppPayload {
   iconGap?: number;
   /** Up to 4 additional icons at absolute positions. `[]` removes them. */
   icons?: readonly PlacedIcon[];
-
-  /* --- Timing --- */
-  /** How long to show the page in ms; `<= 0` uses the global `appDurationMs`. */
-  durationMs?: number;
-  /** Pushed apps only: auto-expire after this many ms, `0` = never. */
-  lifetimeMs?: number;
-  /** What happens when {@link lifetimeMs} runs out. Default `remove`. */
-  lifetimeExpiry?: LifetimeExpiry;
-  /** How many times scrolling text runs across the screen, `0` = off. */
-  repeat?: number;
 
   /* --- Background --- */
   /** Solid canvas fill; ignored when an {@link effect} is set. */
@@ -165,7 +173,24 @@ export interface AppPayload {
   /* --- Drawing --- */
   /** Drawing commands, painted in array order. */
   draw?: readonly DrawCommand[];
+
+  /** Not allowed together with the classic keys - see {@link LayoutAppPayload}. */
+  layout?: never;
 }
+
+/** Keys of {@link ClassicAppPayload} that a `layout` replaces. */
+export type ClassicVisualKey = Exclude<keyof ClassicAppPayload, keyof PayloadTiming | 'layout'>;
+
+/**
+ * A page made of regions (firmware 1.1.4+). The layout replaces every classic visual key;
+ * only the timing keys stay in the outer object.
+ */
+export type LayoutAppPayload = PayloadTiming & {
+  layout: NativeLayout;
+} & { [K in ClassicVisualKey]?: never };
+
+/** A pushed-app page: either the classic keys, or a `layout`. */
+export type AppPayload = ClassicAppPayload | LayoutAppPayload;
 
 /** The 7 keys only notifications accept. */
 export interface NotificationOptions {

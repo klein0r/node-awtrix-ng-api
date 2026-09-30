@@ -1,7 +1,10 @@
-import type { ColorInput, HexColor } from './common.js';
+import type { ColorInput, HexColor, LooseString } from './common.js';
 import type { EffectSettings, EffectSettingsState, OverlayName } from './visuals.js';
 
 export type Soc = 'esp32' | 'esp32s3';
+
+/** `awtrixng` on every ESP32 board, `tc002` on the Ulanzi TC002, `linux` for headless Linux. */
+export type BoardType = LooseString<'awtrixng' | 'tc002' | 'linux'>;
 
 export type ResetReason =
   | 'poweron'
@@ -15,6 +18,41 @@ export type ResetReason =
   | 'brownout'
   | 'sdio'
   | 'unknown';
+
+/** State of display mirroring from another clock. */
+export type MirrorSourceState =
+  | 'off'
+  | 'offline'
+  | 'resolving'
+  | 'notFound'
+  | 'waiting'
+  | 'idle'
+  | 'filtered'
+  | 'sizeMismatch'
+  | 'noMemory'
+  | 'showing';
+
+/** What display mirroring is doing (firmware 1.1.4+). */
+export interface MirrorState {
+  /** This clock shares its display and is on the network. */
+  sharing: boolean;
+  /** Clocks watching this display right now. */
+  viewers: number;
+  /** The clock this clock mirrors, as entered in `mirrorFrom`; `""` for none. */
+  source: string;
+  state: LooseString<MirrorSourceState>;
+  /** Absent until the source clock answered. */
+  sourceWidth?: number;
+  sourceHeight?: number;
+}
+
+/** TC002 web update progress. */
+export interface UpdateState {
+  /** e.g. `idle`. */
+  state: string;
+  release: string;
+  error: string;
+}
 
 export type ConnectionState = 'disabled' | 'offline' | 'connecting' | 'connected';
 
@@ -62,25 +100,27 @@ export interface IndicatorState {
 export interface DeviceState {
   version: string;
   uid: string;
-  /** Always `"awtrixng"` on real hardware. */
-  boardType: string;
-  soc: Soc;
-  /** The release file `POST /update` accepts; `""` in the simulator. */
+  boardType: BoardType;
+  /** `esp32`/`esp32s3` on ESP32 boards; the system architecture (e.g. `armv7l`) on a TC002. */
+  soc: LooseString<Soc>;
+  /** The update file `POST /update` accepts, e.g. `firmware-awtrix-ng.bin` or `awtrix-ng-tc002.awup`; `""` where there is none. */
   updateImage?: string;
   ipAddress: string;
   hostname: string;
   wifiRssi: number;
   uptimeSeconds: number;
-  resetReason: ResetReason;
+  resetReason: LooseString<ResetReason>;
   freeHeapBytes: number;
   minFreeHeapBytes: number;
-  largestFreeBlockBytes: number;
+  /** ESP32 only; omitted on a TC002. */
+  largestFreeBlockBytes?: number;
   /** Absent on boards without PSRAM. */
   psramTotalBytes?: number;
   /** Absent on boards without PSRAM. */
   psramFreeBytes?: number;
   scriptingRunning: boolean;
-  scriptHeapPool: 'internal' | 'psram';
+  /** `system` on a TC002. */
+  scriptHeapPool: 'internal' | 'psram' | 'system';
   scriptHeapBudgetBytes: number;
   fps: number;
   /** Effective brightness after auto-brightness, `0..255`. */
@@ -93,6 +133,10 @@ export interface DeviceState {
   messageCount: number;
   wifi?: LinkState<WifiConnectionError>;
   mqtt: LinkState<MqttConnectionError>;
+  /** Since 1.1.4. */
+  mirror?: MirrorState;
+  /** TC002 only: progress of a web update. */
+  update?: UpdateState;
 
   /* --- Present only when the hardware provides them --- */
   /** Relative ambient light `0..100` % (not lux). Requires `pinLdr >= 0`. */
@@ -113,6 +157,8 @@ export interface DeviceState {
   humidity?: number;
   /** hPa, requires a pressure-capable sensor. */
   pressureHpa?: number;
+  /** Loudness at the microphone `0..100` (log scale over 40 dB). TC002 only. */
+  soundLevel?: number;
 }
 
 /* ------------------------------------------------------------------------------------------ */

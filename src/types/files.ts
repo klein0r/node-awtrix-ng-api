@@ -40,14 +40,27 @@ export interface RestoreApplied {
   appLoop?: number;
   radioStations?: number;
   icons?: number;
+  /** Since 1.1.4. */
+  iconOrigins?: number;
   melodies?: number;
   palettes?: number;
+  /** Since 1.1.4: MP3 files, the scripts' own sounds included. */
+  mp3?: number;
+  /** Older firmware. */
   MP3s?: number;
+  /** Older firmware. */
   sounds?: number;
   scripts?: number;
   /** Rejected entries. */
   skipped?: number;
   [category: string]: number | undefined;
+}
+
+/** `POST /update` success body. */
+export interface FirmwareUpdateResult {
+  ok: true;
+  /** TC002: the package was accepted and is being applied - poll `device.update` after reconnecting. */
+  applying?: boolean;
 }
 
 /** `POST /api/v1/restore` success body. */
