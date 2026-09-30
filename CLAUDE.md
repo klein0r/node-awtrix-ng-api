@@ -49,6 +49,11 @@ TypeScript is pinned to `~5.9`. TypeScript 7 removed `moduleResolution: Node10`,
 
 The types track a specific firmware release, recorded in `src/version.ts` (`AWTRIX_FIRMWARE_VERSION`) and in the README's Compatibility table. When you sync with a newer firmware, update both, and use the firmware's `RELEASE_NOTES.md` to see what changed.
 
+The `beta-tc002` branch targets firmware 1.1.4 (closed beta, adds the Ulanzi TC002). Its docs are at https://ang.blueforcer.de/reference/http/. The raw OpenAPI spec is at https://ang.blueforcer.de/api/openapi.yaml, and plain text of every page is in https://ang.blueforcer.de/search/search_index.json. Diff that spec against `docs/api/openapi.yaml` of the release. Keep 1.1.2 working:
+- Response fields added later are optional (`Since 1.1.4` in the doc comment), and removed ones stay as `@deprecated` optionals (e.g. `radioMeta`).
+- A new route that replaces an old read falls back on `404`/`405` (see `audio.getStations`).
+- `test/firmware-1.1.4.test.ts` covers the beta additions.
+
 The authoritative sources are in the firmware repo: `docs/reference/http.md`, `docs/reference/payload.md`, `docs/reference/settings.md` and `docs/api/openapi.yaml`. They contradict each other in places. When they do, the firmware source (`src/core/api/*.cpp`) was used to decide, and future changes should be checked the same way. Decisions made that way:
 - a script `error` is an object `{message, line?, hook?}` or `null`
 - `overlaySettings.blend` is a boolean

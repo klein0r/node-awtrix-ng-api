@@ -15,9 +15,23 @@ Requires Node.js 22 or newer.
 | | Version |
 |---|---|
 | AWTRIX NG HTTP API | v1 |
-| AWTRIX NG firmware | built against [1.1.2](https://github.com/Blueforcer/awtrix-ng/releases/tag/v1.1.2) |
+| AWTRIX NG firmware | built against 1.1.4 (closed beta, incl. Ulanzi TC002); compatible with [1.1.2](https://github.com/Blueforcer/awtrix-ng/releases/tag/v1.1.2) |
 
-Older 1.x firmware works for everything it already supports. Fields and routes added later, such as `icons` and `iconGap` in payloads, are rejected by such a device with `422` or `404`. You can read the versions at runtime:
+Older 1.x firmware works for everything it already supports. Response fields added in 1.1.4 are typed as optional, and `radioMeta` (removed in 1.1.4) is kept as a deprecated optional setting. Fields and routes a device does not know yet are rejected by it with `422` or `404`.
+
+Added in 1.1.4:
+
+- Region layouts: the `layout` key in pushed apps and notifications, as an alternative to the classic keys
+- Icons as data URLs (`data:image/gif;base64,...`) instead of plain base64; fonts from `capabilities.fonts`
+- Script data (`scripts.getData`/`updateData`) and a script's own sounds (`scripts.listSounds`, `uploadSound`, ...)
+- Audio sources `sfx`, `loop`, `song` and `fx` (mixer and synthesizer on the TC002), stop scope `loop`
+- Bluetooth gamepad (`gamepad`) and Home Assistant Voice status (`voice`) on the TC002
+- Settings `clockFace` and `audioAnalysisSource`, system `panelHeight` and display mirroring
+- TC002 firmware packages (`.awup`) via `system.updateFirmware`
+
+Changing the Home Assistant Voice settings is not offered: the firmware accepts that only from the device's own web page.
+
+You can read the versions at runtime:
 
 ```ts
 import { AWTRIX_FIRMWARE_VERSION } from 'awtrix-ng-api';
@@ -91,12 +105,14 @@ The client groups the routes into namespaces. All methods return promises.
 | `settings` | `get`, `update`, `setBrightness`, `reset` | `/api/v1/settings` |
 | `display` | `get`, `update`, `setPower`, `setOverlay`, `clearOverlay`, `setMoodlight`, `disableMoodlight`, `getScreen` | `/api/v1/display` |
 | `apps` | `list`, `switchTo`, `next`, `previous`, `setOrder`, `disable`, `push`, `delete` | `/api/v1/apps` |
-| `scripts` | `getSource`, `install`, `updateIfUnchanged`, `delete`, `getConfig`, `updateConfig`, `getShared` | `/api/v1/apps/script`, `/api/v1/apps/{name}/config`, `/api/v1/scripts/shared` |
+| `scripts` | `getSource`, `install`, `updateIfUnchanged`, `delete`, `getConfig`, `updateConfig`, `getData`, `updateData`, `listSounds`, `uploadSound`, `deleteSound`, `deleteAllSounds`, `getShared` | `/api/v1/apps/script`, `/api/v1/apps/{name}/config`, `/api/v1/apps/{name}/data`, `/api/v1/scripts/shared` |
 | `notifications` | `send`, `dismiss`, `dismissByName` | `/api/v1/notifications` |
 | `indicators` | `set`, `clear` | `/api/v1/indicators/{1-3}` |
-| `audio` | `getState`, `play`, `playSound`, `playRtttl`, `playStation`, `playUrl`, `stop`, `listMelodies`, `saveMelody`, `deleteMelody`, `listMp3`, `uploadMp3`, `deleteMp3`, `getStations`, `setStations` | `/api/v1/audio` |
+| `audio` | `getState`, `play`, `playSound`, `playRtttl`, `playStation`, `playUrl`, `playSfx`, `playLoop`, `playSong`, `playFx`, `stop`, `listMelodies`, `saveMelody`, `deleteMelody`, `listMp3`, `uploadMp3`, `deleteMp3`, `getStations`, `setStations` | `/api/v1/audio` |
 | `system` | `get`, `getWithSecrets`, `update`, `scanWifi`, `waitForWifiScan`, `getLogs`, `updateFirmware`, `restoreBackup` | `/api/v1/system`, `/api/v1/logs`, `/update`, `/api/v1/restore` |
 | `files` | `list`, `upload`, `uploadIcon`, `delete`, `download`, `listIconOrigins`, `setIconOrigin`, `deleteIconOrigin` | `/api/v1/files`, `/api/v1/icons/origins`, static assets |
+| `gamepad` | `get`, `pair`, `forget` | `/api/v1/gamepad` (TC002) |
+| `voice` | `get` | `/api/v1/voice` (TC002) |
 
 ### Examples
 
