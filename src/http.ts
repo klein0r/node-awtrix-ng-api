@@ -163,7 +163,8 @@ export class HttpTransport {
   private async send<T>(req: TransportRequest): Promise<TransportResponse<T>> {
     const method = req.method.toUpperCase();
     const path = req.path;
-    const headers: Record<string, string> = { ...this.headers };
+    // `false` keeps axios from adding its form-urlencoded default to bodyless requests.
+    const headers: Record<string, string | false> = { ...this.headers, 'Content-Type': false };
     let data: unknown;
 
     if (req.json !== undefined) {
@@ -172,11 +173,13 @@ export class HttpTransport {
     } else if (req.body !== undefined) {
       data = req.body;
       if (req.contentType) headers['Content-Type'] = req.contentType;
+      // FormData: axios sets multipart/form-data including the boundary itself.
+      else delete headers['Content-Type'];
     }
 
-    let response: AxiosResponse<string | ArrayBuffer>;
+    let response: AxiosResponse<RawBody>;
     try {
-      response = await this.axios.request<string | ArrayBuffer>({
+      response = await this.axios.request<RawBody>({
         method: req.method,
         url: this.baseUrl + path,
         params: req.query ? stripUndefined(req.query) : undefined,
@@ -206,16 +209,31 @@ export class HttpTransport {
   }
 }
 
-function parseBody<T>(kind: ResponseKind, raw: string | ArrayBuffer | undefined, status: number, method: string, path: string): T {
+/** What axios hands back: a string for `text`, a Buffer (Node.js) or ArrayBuffer for `arraybuffer`. */
+type RawBody = string | ArrayBuffer | ArrayBufferView | undefined;
+
+function toBytes(raw: RawBody): Uint8Array {
+  if (raw instanceof ArrayBuffer) return new Uint8Array(raw);
+  if (ArrayBuffer.isView(raw)) return new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
+  if (typeof raw === 'string') return new TextEncoder().encode(raw);
+  return new Uint8Array(0);
+}
+
+function toText(raw: RawBody): string {
+  return typeof raw === 'string' ? raw : new TextDecoder().decode(toBytes(raw));
+}
+
+function parseBody<T>(kind: ResponseKind, raw: RawBody, status: number, method: string, path: string): T {
   if (kind === 'binary') {
-    return new Uint8Array(raw instanceof ArrayBuffer ? raw : new ArrayBuffer(0)) as T;
+    // Copy, so the result does not pin a pooled Buffer.
+    return Uint8Array.from(toBytes(raw)) as T;
   }
-  const text = typeof raw === 'string' ? raw : raw instanceof ArrayBuffer ? new TextDecoder().decode(raw) : '';
+  const text = toText(raw);
   if (kind === 'text') return text as T;
   if (text.trim() === '') return undefined as T;
   try {
     return JSON.parse(text) as T;
-  } catch (error) {
+  } catch {
     throw new AwtrixResponseError(status, method, path, 'response body is not valid JSON', text);
   }
 }
@@ -223,12 +241,12 @@ function parseBody<T>(kind: ResponseKind, raw: string | ArrayBuffer | undefined,
 function toApiError(
   status: number,
   statusText: string,
-  raw: string | ArrayBuffer | undefined,
+  raw: RawBody,
   headers: Record<string, string>,
   method: string,
   path: string,
 ): AwtrixApiError {
-  const text = typeof raw === 'string' ? raw : raw instanceof ArrayBuffer ? new TextDecoder().decode(raw) : '';
+  const text = toText(raw);
   let body: unknown = text || undefined;
   try {
     if (text) body = JSON.parse(text);

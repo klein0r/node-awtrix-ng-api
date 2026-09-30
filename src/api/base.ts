@@ -31,7 +31,7 @@ export abstract class ApiModule {
 /** Wraps upload content into a single-file multipart form. */
 export function toFormData(field: string, content: UploadContent, fileName: string, contentType?: string): FormData {
   if (typeof FormData === 'undefined' || typeof Blob === 'undefined') {
-    throw new AwtrixValidationError('content', 'multipart uploads need FormData and Blob (Node.js 18 or newer)');
+    throw new AwtrixValidationError('content', 'multipart uploads need FormData and Blob (Node.js 22 or newer)');
   }
   let blob: Blob;
   if (content instanceof Blob) {

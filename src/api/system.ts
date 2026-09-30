@@ -24,7 +24,7 @@ export interface WifiScanWaitOptions {
 /** Device configuration (network, MQTT, time, auth, panel, GPIO), logs, firmware and backups. */
 export class SystemApi extends ApiModule {
   /** `GET /api/v1/system` - the configuration without the three secrets. */
-  get(options?: RequestOptions): Promise<SystemConfig> {
+  async get(options?: RequestOptions): Promise<SystemConfig> {
     return this.json(this.read('/api/v1/system', options));
   }
 
@@ -32,7 +32,7 @@ export class SystemApi extends ApiModule {
    * `GET /api/v1/system?secrets=1` - the configuration including `wifiPass`, `mqttPass` and
    * `authPass` (for backups). Ignored by the device in provisioning mode.
    */
-  getWithSecrets(options?: RequestOptions): Promise<SystemConfigWithSecrets> {
+  async getWithSecrets(options?: RequestOptions): Promise<SystemConfigWithSecrets> {
     return this.json(this.read('/api/v1/system', options, { secrets: 1 }));
   }
 
@@ -41,7 +41,7 @@ export class SystemApi extends ApiModule {
    * configuration. Most changes, and all pin changes, apply after a reboot. An invalid GPIO
    * map rejects with `400 invalidPinConfig`, a range error with `422 validationFailed`.
    */
-  update(patch: SystemConfigUpdate, options?: RequestOptions): Promise<SystemConfig> {
+  async update(patch: SystemConfigUpdate, options?: RequestOptions): Promise<SystemConfig> {
     if (typeof patch !== 'object' || patch === null || Array.isArray(patch)) {
       throw new AwtrixValidationError('patch', 'must be an object');
     }
@@ -82,7 +82,7 @@ export class SystemApi extends ApiModule {
    * `GET /api/v1/logs` - buffered log lines with a sequence number greater than `after`.
    * Pass the returned `next` back as `after` to poll incrementally.
    */
-  getLogs(after = 0, options?: RequestOptions): Promise<LogChunk> {
+  async getLogs(after = 0, options?: RequestOptions): Promise<LogChunk> {
     assertInteger(after, 'after', 0, Number.MAX_SAFE_INTEGER);
     return this.json(this.read('/api/v1/logs', options, { after }));
   }
@@ -91,7 +91,7 @@ export class SystemApi extends ApiModule {
    * `POST /update` - uploads and flashes a firmware image, then the device reboots. Use
    * `device.waitForOnline()` afterwards. A mismatching image rejects with `400 wrongChip`.
    */
-  updateFirmware(firmware: UploadContent, fileName = 'firmware.bin', options?: RequestOptions): Promise<OkResponse> {
+  async updateFirmware(firmware: UploadContent, fileName = 'firmware.bin', options?: RequestOptions): Promise<OkResponse> {
     return this.ok({
       method: 'POST',
       path: '/update',
@@ -105,7 +105,7 @@ export class SystemApi extends ApiModule {
    * not check out are skipped and reported in `warnings`. Reboot afterwards to apply
    * boot-time configuration.
    */
-  restoreBackup(backup: UploadContent, fileName = 'backup.zip', options?: RequestOptions): Promise<RestoreResult> {
+  async restoreBackup(backup: UploadContent, fileName = 'backup.zip', options?: RequestOptions): Promise<RestoreResult> {
     return this.json({
       method: 'POST',
       path: '/api/v1/restore',

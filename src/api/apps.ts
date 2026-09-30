@@ -14,12 +14,12 @@ export interface SwitchAppOptions extends RequestOptions {
 /** The app collection: inventory, rotation, pushed apps and removal. */
 export class AppsApi extends ApiModule {
   /** `GET /api/v1/apps` - the arranged apps in order, then everything else. */
-  list(options?: RequestOptions): Promise<AppInfo[]> {
+  async list(options?: RequestOptions): Promise<AppInfo[]> {
     return this.json(this.read('/api/v1/apps', options));
   }
 
   /** `PUT /api/v1/apps/active` - shows the app. Rejects with `404` for an unknown app. */
-  switchTo(name: AppName, options: SwitchAppOptions = {}): Promise<OkResponse> {
+  async switchTo(name: AppName, options: SwitchAppOptions = {}): Promise<OkResponse> {
     if (typeof name !== 'string' || name.length === 0) {
       throw new AwtrixValidationError('name', 'must be a non-empty string');
     }
@@ -29,12 +29,12 @@ export class AppsApi extends ApiModule {
   }
 
   /** `POST /api/v1/apps/next` - advances the rotation. */
-  next(options?: RequestOptions): Promise<OkResponse> {
+  async next(options?: RequestOptions): Promise<OkResponse> {
     return this.ok({ method: 'POST', path: '/api/v1/apps/next', options });
   }
 
   /** `POST /api/v1/apps/previous` - steps the rotation back. */
-  previous(options?: RequestOptions): Promise<OkResponse> {
+  async previous(options?: RequestOptions): Promise<OkResponse> {
     return this.ok({ method: 'POST', path: '/api/v1/apps/previous', options });
   }
 
@@ -42,7 +42,7 @@ export class AppsApi extends ApiModule {
    * `PUT /api/v1/apps/order` - which apps are switched off and (optionally) the drawing
    * order. Apps named in neither list keep their state.
    */
-  setOrder(order: AppOrder, options?: RequestOptions): Promise<OkResponse> {
+  async setOrder(order: AppOrder, options?: RequestOptions): Promise<OkResponse> {
     if (typeof order !== 'object' || order === null || !Array.isArray(order.disabled)) {
       throw new AwtrixValidationError('disabled', 'is required (use [] to switch nothing off)');
     }
@@ -58,7 +58,7 @@ export class AppsApi extends ApiModule {
   }
 
   /** Switches the given apps off without touching the arrangement. */
-  disable(names: readonly AppName[], options?: RequestOptions): Promise<OkResponse> {
+  async disable(names: readonly AppName[], options?: RequestOptions): Promise<OkResponse> {
     return this.setOrder({ disabled: names }, options);
   }
 
@@ -66,7 +66,7 @@ export class AppsApi extends ApiModule {
    * `PUT /api/v1/apps/pushed/{name}` - creates or replaces a pushed app (held in RAM only).
    * An array creates the indexed apps `{name}0`, `{name}1`, ... and is all-or-nothing.
    */
-  push(name: AppName, payload: AppPayload | readonly AppPayload[], options?: RequestOptions): Promise<OkResponse> {
+  async push(name: AppName, payload: AppPayload | readonly AppPayload[], options?: RequestOptions): Promise<OkResponse> {
     assertAppName(name);
     if (Array.isArray(payload)) {
       if (payload.length === 0) throw new AwtrixValidationError('payload', 'must not be an empty array');
@@ -82,7 +82,7 @@ export class AppsApi extends ApiModule {
    * `DELETE /api/v1/apps/{name}` - removes whatever app carries the name (pushed incl. its
    * indexed children, or a script together with its store). Succeeds for unknown names.
    */
-  delete(name: AppName, options?: RequestOptions): Promise<OkResponse> {
+  async delete(name: AppName, options?: RequestOptions): Promise<OkResponse> {
     assertAppName(name);
     return this.ok({ method: 'DELETE', path: `/api/v1/apps/${segment(name)}`, options });
   }

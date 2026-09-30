@@ -11,7 +11,7 @@ export class NotificationsApi extends ApiModule {
    * `POST /api/v1/notifications` - queues a notification. Rejects with `507` when the queue
    * is full.
    */
-  send(notification: NotificationPayload, options?: RequestOptions): Promise<OkResponse> {
+  async send(notification: NotificationPayload, options?: RequestOptions): Promise<OkResponse> {
     if (typeof notification !== 'object' || notification === null || Array.isArray(notification)) {
       throw new AwtrixValidationError('notification', 'must be an object (send one notification per call)');
     }
@@ -22,7 +22,7 @@ export class NotificationsApi extends ApiModule {
   }
 
   /** `DELETE /api/v1/notifications/active` - dismisses the notification on screen (if any). */
-  dismiss(options?: RequestOptions): Promise<OkResponse> {
+  async dismiss(options?: RequestOptions): Promise<OkResponse> {
     return this.ok({ method: 'DELETE', path: '/api/v1/notifications/active', options });
   }
 
@@ -30,7 +30,7 @@ export class NotificationsApi extends ApiModule {
    * `DELETE /api/v1/notifications/{name}` - dismisses the notification sent with this `name`,
    * wherever it sits in the queue. Rejects with `404` when none carries the name.
    */
-  dismissByName(name: string, options?: RequestOptions): Promise<OkResponse> {
+  async dismissByName(name: string, options?: RequestOptions): Promise<OkResponse> {
     assertNonEmptyString(name, 'name');
     if (name === 'active') {
       throw new AwtrixValidationError('name', '"active" is reserved; use dismiss() for the current notification');

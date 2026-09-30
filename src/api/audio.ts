@@ -22,7 +22,7 @@ const MAX_STATIONS = 32;
 /** Buzzer melodies, stored MP3s, DFPlayer tracks and internet radio. */
 export class AudioApi extends ApiModule {
   /** `GET /api/v1/audio` - what is playing, plus the station list. */
-  getState(options?: RequestOptions): Promise<AudioState> {
+  async getState(options?: RequestOptions): Promise<AudioState> {
     return this.json(this.read('/api/v1/audio', options));
   }
 
@@ -30,7 +30,7 @@ export class AudioApi extends ApiModule {
    * `POST /api/v1/audio/play` - plays exactly one source. One-shots (`sound`, `mp3`,
    * `melody`, `track`, `rtttl`) are silenced while `soundEnabled` is off; streams are not.
    */
-  play(request: AudioPlayRequest, options?: RequestOptions): Promise<OkResponse> {
+  async play(request: AudioPlayRequest, options?: RequestOptions): Promise<OkResponse> {
     if (typeof request !== 'object' || request === null) {
       throw new AwtrixValidationError('request', 'must be an object');
     }
@@ -47,22 +47,22 @@ export class AudioApi extends ApiModule {
   }
 
   /** Plays a name resolved against every output: stored MP3, then melody, then DFPlayer track. */
-  playSound(name: string, options?: RequestOptions): Promise<OkResponse> {
+  async playSound(name: string, options?: RequestOptions): Promise<OkResponse> {
     return this.play({ sound: name }, options);
   }
 
   /** Plays an inline RTTTL melody on the buzzer. */
-  playRtttl(rtttl: string, options?: RequestOptions): Promise<OkResponse> {
+  async playRtttl(rtttl: string, options?: RequestOptions): Promise<OkResponse> {
     return this.play({ rtttl }, options);
   }
 
   /** Tunes to a stored station by name. */
-  playStation(station: string, options?: RequestOptions): Promise<OkResponse> {
+  async playStation(station: string, options?: RequestOptions): Promise<OkResponse> {
     return this.play({ station }, options);
   }
 
   /** Streams a URL without storing it. */
-  playUrl(url: string, options?: RequestOptions): Promise<OkResponse> {
+  async playUrl(url: string, options?: RequestOptions): Promise<OkResponse> {
     return this.play({ url }, options);
   }
 
@@ -70,7 +70,7 @@ export class AudioApi extends ApiModule {
    * `POST /api/v1/audio/stop` - `sounds` stops one-shots, `stream` the radio, `all`
    * (default) both. Works even while `soundEnabled` is off.
    */
-  stop(scope?: AudioStopScope, options?: RequestOptions): Promise<OkResponse> {
+  async stop(scope?: AudioStopScope, options?: RequestOptions): Promise<OkResponse> {
     if (scope !== undefined && !STOP_SCOPES.includes(scope)) {
       throw new AwtrixValidationError('scope', `must be one of ${STOP_SCOPES.join(', ')}`);
     }
@@ -80,7 +80,7 @@ export class AudioApi extends ApiModule {
   /* --- Melodies --- */
 
   /** `GET /api/v1/audio/melodies` - every stored melody with its parse result. */
-  listMelodies(options?: RequestOptions): Promise<MelodyList> {
+  async listMelodies(options?: RequestOptions): Promise<MelodyList> {
     return this.json(this.read('/api/v1/audio/melodies', options));
   }
 
@@ -101,7 +101,7 @@ export class AudioApi extends ApiModule {
   }
 
   /** `DELETE /api/v1/audio/melodies/{name}`. Rejects with `404` for an unknown melody. */
-  deleteMelody(name: string, options?: RequestOptions): Promise<OkResponse> {
+  async deleteMelody(name: string, options?: RequestOptions): Promise<OkResponse> {
     assertMelodyName(name);
     return this.ok({ method: 'DELETE', path: `/api/v1/audio/melodies/${segment(name)}`, options });
   }
@@ -109,7 +109,7 @@ export class AudioApi extends ApiModule {
   /* --- MP3 --- */
 
   /** `GET /api/v1/audio/mp3` - stored MP3 files. */
-  listMp3(options?: RequestOptions): Promise<Mp3List> {
+  async listMp3(options?: RequestOptions): Promise<Mp3List> {
     return this.json(this.read('/api/v1/audio/mp3', options));
   }
 
@@ -117,7 +117,7 @@ export class AudioApi extends ApiModule {
    * `POST /api/v1/audio/mp3` - uploads one MP3. `name` is what it is played by
    * (`[A-Za-z0-9_-]{1,32}`, `.mp3` is appended when missing).
    */
-  uploadMp3(name: string, content: UploadContent, options?: RequestOptions): Promise<OkResponse> {
+  async uploadMp3(name: string, content: UploadContent, options?: RequestOptions): Promise<OkResponse> {
     const fileName = `${normalizeMp3Name(name)}.mp3`;
     return this.ok({
       method: 'POST',
@@ -128,7 +128,7 @@ export class AudioApi extends ApiModule {
   }
 
   /** `DELETE /api/v1/audio/mp3/{name}` - `name` with or without `.mp3`. */
-  deleteMp3(name: string, options?: RequestOptions): Promise<OkResponse> {
+  async deleteMp3(name: string, options?: RequestOptions): Promise<OkResponse> {
     return this.ok({ method: 'DELETE', path: `/api/v1/audio/mp3/${segment(normalizeMp3Name(name))}`, options });
   }
 
@@ -143,7 +143,7 @@ export class AudioApi extends ApiModule {
    * `PUT /api/v1/audio/stations` - replaces the whole list: at most 32 stations, unique names
    * of 1-24 characters, `http(s)` URLs of at most 255 characters.
    */
-  setStations(stations: readonly RadioStation[], options?: RequestOptions): Promise<OkResponse> {
+  async setStations(stations: readonly RadioStation[], options?: RequestOptions): Promise<OkResponse> {
     if (!Array.isArray(stations)) throw new AwtrixValidationError('stations', 'must be an array');
     if (stations.length > MAX_STATIONS) {
       throw new AwtrixValidationError('stations', `at most ${MAX_STATIONS} stations are allowed`);

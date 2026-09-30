@@ -19,7 +19,7 @@ export interface WaitForOnlineOptions {
 /** Device state, lifecycle and capabilities. */
 export class DeviceApi extends ApiModule {
   /** `GET /api/v1/device` - state and statistics. */
-  get(options?: RequestOptions): Promise<DeviceState> {
+  async get(options?: RequestOptions): Promise<DeviceState> {
     return this.json(this.read('/api/v1/device', options));
   }
 
@@ -30,12 +30,12 @@ export class DeviceApi extends ApiModule {
   }
 
   /** `GET /api/v1/capabilities` - effect/transition/overlay/palette names, audio outputs, GPIO rules. */
-  capabilities(options?: RequestOptions): Promise<Capabilities> {
+  async capabilities(options?: RequestOptions): Promise<Capabilities> {
     return this.json(this.read('/api/v1/capabilities', options));
   }
 
   /** `POST /api/v1/device/reboot`. The reply is sent before the restart. */
-  reboot(options?: RequestOptions): Promise<OkResponse> {
+  async reboot(options?: RequestOptions): Promise<OkResponse> {
     return this.ok({ method: 'POST', path: '/api/v1/device/reboot', options });
   }
 
@@ -43,7 +43,7 @@ export class DeviceApi extends ApiModule {
    * `POST /api/v1/device/sleep` - deep-sleep for `durationMs`, then boot normally. The select
    * button only wakes the device early when it sits on an RTC pin.
    */
-  sleep(durationMs: number, options?: RequestOptions): Promise<OkResponse> {
+  async sleep(durationMs: number, options?: RequestOptions): Promise<OkResponse> {
     assertInteger(durationMs, 'durationMs', 1, Number.MAX_SAFE_INTEGER);
     return this.ok({ method: 'POST', path: '/api/v1/device/sleep', json: { durationMs }, options });
   }
@@ -53,7 +53,7 @@ export class DeviceApi extends ApiModule {
    * and the whole file system (icons, melodies, scripts ...), then reboots into provisioning
    * mode. **Cannot be undone.**
    */
-  factoryReset(options?: RequestOptions): Promise<OkResponse> {
+  async factoryReset(options?: RequestOptions): Promise<OkResponse> {
     return this.ok({ method: 'POST', path: '/api/v1/device/factory-reset', options });
   }
 

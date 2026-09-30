@@ -8,7 +8,7 @@ import { ApiModule } from './base.js';
 /** The saved preferences: brightness, colors, clock/date format, transitions, volumes. */
 export class SettingsApi extends ApiModule {
   /** `GET /api/v1/settings` - every settings key. */
-  get(options?: RequestOptions): Promise<Settings> {
+  async get(options?: RequestOptions): Promise<Settings> {
     return this.json(this.read('/api/v1/settings', options));
   }
 
@@ -16,7 +16,7 @@ export class SettingsApi extends ApiModule {
    * `PATCH /api/v1/settings` - any subset of the keys. Applied completely or not at all;
    * resolves with the full, updated settings.
    */
-  update(patch: SettingsUpdate, options?: RequestOptions): Promise<Settings> {
+  async update(patch: SettingsUpdate, options?: RequestOptions): Promise<Settings> {
     if (typeof patch !== 'object' || patch === null || Array.isArray(patch)) {
       throw new AwtrixValidationError('patch', 'must be an object');
     }
@@ -31,7 +31,7 @@ export class SettingsApi extends ApiModule {
   }
 
   /** Shorthand for `update({ brightness })`, `0..255`. */
-  setBrightness(brightness: number, options?: RequestOptions): Promise<Settings> {
+  async setBrightness(brightness: number, options?: RequestOptions): Promise<Settings> {
     return this.update({ brightness }, options);
   }
 
@@ -39,7 +39,7 @@ export class SettingsApi extends ApiModule {
    * `POST /api/v1/settings/reset` - clears the settings and **reboots**. Wi-Fi, MQTT and the
    * GPIO map are not touched.
    */
-  reset(options?: RequestOptions): Promise<OkResponse> {
+  async reset(options?: RequestOptions): Promise<OkResponse> {
     return this.ok({ method: 'POST', path: '/api/v1/settings/reset', options });
   }
 }

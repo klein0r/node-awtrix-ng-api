@@ -11,7 +11,7 @@ const READABLE_PREFIXES: readonly string[] = ['/ICONS/', '/MELODIES/', '/PALETTE
 /** The LittleFS file system: icons, melodies, palettes, MP3s - plus icon origin links. */
 export class FilesApi extends ApiModule {
   /** `GET /api/v1/files?dir=` - a directory listing (empty for an unknown directory). */
-  list(dir: AssetDirectory = '/ICONS', options?: RequestOptions): Promise<FileList> {
+  async list(dir: AssetDirectory = '/ICONS', options?: RequestOptions): Promise<FileList> {
     assertNonEmptyString(dir, 'dir');
     return this.json(this.read('/api/v1/files', options, { dir }));
   }
@@ -20,7 +20,7 @@ export class FilesApi extends ApiModule {
    * `POST /api/v1/files?dir=` - uploads one file. The content must match the folder:
    * `/ICONS` GIF or JPEG, `/MELODIES` RTTTL text, `/PALETTES` `RRGGBB` lines, `/MP3` MP3.
    */
-  upload(dir: Exclude<AssetDirectory, '/SCRIPTS'>, fileName: string, content: UploadContent, options?: RequestOptions): Promise<OkResponse> {
+  async upload(dir: Exclude<AssetDirectory, '/SCRIPTS'>, fileName: string, content: UploadContent, options?: RequestOptions): Promise<OkResponse> {
     if (!WRITABLE_DIRECTORIES.includes(dir)) {
       throw new AwtrixValidationError('dir', `must be one of ${WRITABLE_DIRECTORIES.join(', ')}`);
     }
@@ -35,7 +35,7 @@ export class FilesApi extends ApiModule {
   }
 
   /** Uploads an icon (`.gif` or `.jpg`) to `/ICONS`. */
-  uploadIcon(fileName: string, content: UploadContent, options?: RequestOptions): Promise<OkResponse> {
+  async uploadIcon(fileName: string, content: UploadContent, options?: RequestOptions): Promise<OkResponse> {
     if (!/\.(gif|jpe?g)$/i.test(fileName)) {
       throw new AwtrixValidationError('fileName', 'icons must be .gif or .jpg files');
     }
@@ -43,7 +43,7 @@ export class FilesApi extends ApiModule {
   }
 
   /** `DELETE /api/v1/files?path=` - e.g. `"/ICONS/1234.jpg"`. Also removes an icon's origin link. */
-  delete(path: string, options?: RequestOptions): Promise<OkResponse> {
+  async delete(path: string, options?: RequestOptions): Promise<OkResponse> {
     assertAssetPath(path, WRITABLE_DIRECTORIES.map((d) => `${d}/`));
     return this.ok({ method: 'DELETE', path: '/api/v1/files', query: { path }, options });
   }
@@ -68,7 +68,7 @@ export class FilesApi extends ApiModule {
   }
 
   /** `PUT /api/v1/icons/origins` - creates or replaces the link of one existing icon. */
-  setIconOrigin(origin: IconOrigin, options?: RequestOptions): Promise<OkResponse> {
+  async setIconOrigin(origin: IconOrigin, options?: RequestOptions): Promise<OkResponse> {
     assertIconFileName(origin?.name);
     if (typeof origin.hub !== 'string' || !/^https:\/\/[^@?#%\\ ]+\/icons\/$/.test(origin.hub) || origin.hub.length > 240) {
       throw new AwtrixValidationError('hub', 'must be an https URL ending in /icons/ (at most 240 characters)');
@@ -84,7 +84,7 @@ export class FilesApi extends ApiModule {
   }
 
   /** `DELETE /api/v1/icons/origins?name=` - removes the link only, the icon stays. */
-  deleteIconOrigin(fileName: string, options?: RequestOptions): Promise<OkResponse> {
+  async deleteIconOrigin(fileName: string, options?: RequestOptions): Promise<OkResponse> {
     assertIconFileName(fileName);
     return this.ok({ method: 'DELETE', path: '/api/v1/icons/origins', query: { name: fileName }, options });
   }
