@@ -1,7 +1,7 @@
 import { AwtrixConnectionError, AwtrixValidationError } from '../errors.js';
 import { delay, type RequestOptions } from '../http.js';
 import type { OkResponse } from '../types/common.js';
-import type { RestoreResult, UploadContent } from '../types/files.js';
+import type { FirmwareUpdateResult, RestoreResult, UploadContent } from '../types/files.js';
 import type {
   LogChunk,
   SystemConfig,
@@ -88,11 +88,18 @@ export class SystemApi extends ApiModule {
   }
 
   /**
-   * `POST /update` - uploads and flashes a firmware image, then the device reboots. Use
-   * `device.waitForOnline()` afterwards. A mismatching image rejects with `400 wrongChip`.
+   * `POST /update` - uploads the update file named by `device.updateImage` and installs it.
+   *
+   * - ESP32: a matching firmware `.bin`; the device reboots afterwards. A mismatching image
+   *   rejects with `400 wrongChip`.
+   * - TC002 (1.1.4+): an `.awup` package; resolves with `applying: true`. Poll
+   *   `device.get()` → `update` after reconnecting to learn the result. Errors include
+   *   `invalidPackage`, `wrongTarget` (400) and `notNewer`, `updateBusy` (409).
+   *
+   * Use `device.waitForOnline()` afterwards.
    */
-  async updateFirmware(firmware: UploadContent, fileName = 'firmware.bin', options?: RequestOptions): Promise<OkResponse> {
-    return this.ok({
+  async updateFirmware(firmware: UploadContent, fileName = 'firmware.bin', options?: RequestOptions): Promise<FirmwareUpdateResult> {
+    return this.json({
       method: 'POST',
       path: '/update',
       body: toFormData('firmware', firmware, fileName, 'application/octet-stream'),

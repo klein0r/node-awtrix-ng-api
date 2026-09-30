@@ -1,5 +1,5 @@
 import type { RequestOptions } from '../http.js';
-import { AwtrixValidationError } from '../errors.js';
+import { AwtrixApiError, AwtrixValidationError } from '../errors.js';
 import type {
   AudioPlayRequest,
   AudioSources,
@@ -9,14 +9,29 @@ import type {
   MelodySaveResult,
   Mp3List,
   RadioStation,
+  ScriptSoundSource,
 } from '../types/audio.js';
 import type { OkResponse } from '../types/common.js';
 import type { UploadContent } from '../types/files.js';
-import { assertInteger, assertMelodyName, assertNonEmptyString, normalizeMp3Name, segment } from '../validation.js';
+import { assertAppName, assertInteger, assertMelodyName, assertNonEmptyString, normalizeMp3Name, segment } from '../validation.js';
 import { ApiModule, toFormData, UPLOAD_TIMEOUT } from './base.js';
 
-const SOURCE_KEYS: readonly (keyof AudioSources)[] = ['sound', 'mp3', 'melody', 'track', 'rtttl', 'station', 'index', 'url'];
-const STOP_SCOPES: readonly AudioStopScope[] = ['sounds', 'stream', 'all'];
+const SOURCE_KEYS: readonly (keyof AudioSources)[] = [
+  'sound',
+  'mp3',
+  'melody',
+  'track',
+  'rtttl',
+  'sfx',
+  'loop',
+  'song',
+  'fx',
+  'station',
+  'index',
+  'url',
+];
+const SCRIPT_SOUND_SOURCES: readonly string[] = ['mp3', 'sfx', 'loop'] satisfies readonly ScriptSoundSource[];
+const STOP_SCOPES: readonly AudioStopScope[] = ['sounds', 'stream', 'loop', 'all'];
 const MAX_STATIONS = 32;
 
 /** Buzzer melodies, stored MP3s, DFPlayer tracks and internet radio. */
@@ -27,23 +42,42 @@ export class AudioApi extends ApiModule {
   }
 
   /**
-   * `POST /api/v1/audio/play` - plays exactly one source. One-shots (`sound`, `mp3`,
-   * `melody`, `track`, `rtttl`) are silenced while `soundEnabled` is off; streams are not.
+   * `POST /api/v1/audio/play` - plays exactly one source. With `soundEnabled` off every source
+   * except the radio ones answers `200` and plays nothing.
+   *
+   * `sfx`, `loop`, `song` and `fx` need firmware 1.1.4 and a mixer / synthesizer (TC002);
+   * without one the device answers `503`. `script` (with `mp3`/`sfx`/`loop`) plays a script's
+   * own sound; `nextBar` (with `song`) switches songs at the next bar line.
    */
   async play(request: AudioPlayRequest, options?: RequestOptions): Promise<OkResponse> {
     if (typeof request !== 'object' || request === null) {
       throw new AwtrixValidationError('request', 'must be an object');
     }
-    const keys = SOURCE_KEYS.filter((key) => (request as Partial<AudioSources>)[key] !== undefined);
+    const input = request as Partial<AudioSources> & { script?: unknown; nextBar?: unknown };
+    const keys = SOURCE_KEYS.filter((key) => input[key] !== undefined);
     if (keys.length !== 1) {
       throw new AwtrixValidationError('request', `exactly one of ${SOURCE_KEYS.join(', ')} is required`);
     }
     const key = keys[0]!;
-    const value = (request as Partial<AudioSources>)[key];
+    const value = input[key];
     if (key === 'track') assertInteger(value, 'track', 1, 2999);
     else if (key === 'index') assertInteger(value, 'index', 0, MAX_STATIONS - 1);
     else assertNonEmptyString(value, key);
-    return this.ok({ method: 'POST', path: '/api/v1/audio/play', json: { [key]: value }, options });
+
+    const json: Record<string, unknown> = { [key]: value };
+    if (input.script !== undefined) {
+      if (!SCRIPT_SOUND_SOURCES.includes(key)) {
+        throw new AwtrixValidationError('script', `is only allowed with ${SCRIPT_SOUND_SOURCES.join(', ')}`);
+      }
+      assertAppName(input.script, 'script');
+      json.script = input.script;
+    }
+    if (input.nextBar !== undefined) {
+      if (key !== 'song') throw new AwtrixValidationError('nextBar', 'is only allowed with song');
+      if (typeof input.nextBar !== 'boolean') throw new AwtrixValidationError('nextBar', 'must be a boolean');
+      json.nextBar = input.nextBar;
+    }
+    return this.ok({ method: 'POST', path: '/api/v1/audio/play', json, options });
   }
 
   /** Plays a name resolved against every output: stored MP3, then melody, then DFPlayer track. */
@@ -66,9 +100,33 @@ export class AudioApi extends ApiModule {
     return this.play({ url }, options);
   }
 
+  /** Plays a stored MP3 as an overlapping sound effect (1.1.4+; like `mp3` without a mixer). */
+  async playSfx(name: string, sfxOptions: { script?: string } & RequestOptions = {}): Promise<OkResponse> {
+    const { script, ...options } = sfxOptions;
+    return this.play(script === undefined ? { sfx: name } : { sfx: name, script }, options);
+  }
+
+  /** Loops a stored MP3 under all other sounds until stopped (1.1.4+, needs a mixer). */
+  async playLoop(name: string, loopOptions: { script?: string } & RequestOptions = {}): Promise<OkResponse> {
+    const { script, ...options } = loopOptions;
+    return this.play(script === undefined ? { loop: name } : { loop: name, script }, options);
+  }
+
+  /** Plays song text on the synthesizer in place of the loop (1.1.4+, TC002). */
+  async playSong(song: string, songOptions: { nextBar?: boolean } & RequestOptions = {}): Promise<OkResponse> {
+    const { nextBar, ...options } = songOptions;
+    return this.play(nextBar === undefined ? { song } : { song, nextBar }, options);
+  }
+
+  /** Plays song text once as a synthesizer effect (1.1.4+, TC002). */
+  async playFx(fx: string, options?: RequestOptions): Promise<OkResponse> {
+    return this.play({ fx }, options);
+  }
+
   /**
-   * `POST /api/v1/audio/stop` - `sounds` stops one-shots, `stream` the radio, `all`
-   * (default) both. Works even while `soundEnabled` is off.
+   * `POST /api/v1/audio/stop` - `sounds` stops one-shots, effects and the loop, `stream` the
+   * radio, `loop` only the loop (1.1.4+), `all` (default) everything. Works even while
+   * `soundEnabled` is off.
    */
   async stop(scope?: AudioStopScope, options?: RequestOptions): Promise<OkResponse> {
     if (scope !== undefined && !STOP_SCOPES.includes(scope)) {
@@ -134,9 +192,20 @@ export class AudioApi extends ApiModule {
 
   /* --- Radio --- */
 
-  /** The stored station list (read from `GET /api/v1/audio`). */
+  /**
+   * The stored station list: `GET /api/v1/audio/stations` (1.1.4+), falling back to the list
+   * in `GET /api/v1/audio` on older firmware.
+   */
   async getStations(options?: RequestOptions): Promise<RadioStation[]> {
-    return (await this.getState(options)).stations;
+    try {
+      const body = await this.json<{ stations: RadioStation[] }>(this.read('/api/v1/audio/stations', options));
+      return body.stations;
+    } catch (error) {
+      if (error instanceof AwtrixApiError && (error.status === 404 || error.status === 405)) {
+        return (await this.getState(options)).stations;
+      }
+      throw error;
+    }
   }
 
   /**

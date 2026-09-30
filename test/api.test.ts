@@ -343,9 +343,9 @@ describe('audio', () => {
         { name: 'A', url: 'http://b' },
       ]),).rejects.toThrow(/duplicate/);
 
-    mock.reply({ body: { available: true, mp3: { playing: false, name: '' }, radio: {}, stations: [{ name: 'SWR3', url: 'x' }] } });
+    mock.reply({ body: { stations: [{ name: 'SWR3', url: 'x' }] } });
     expect(await client.audio.getStations()).toEqual([{ name: 'SWR3', url: 'x' }]);
-    expectRequest('GET', '/api/v1/audio');
+    expectRequest('GET', '/api/v1/audio/stations');
   });
 });
 

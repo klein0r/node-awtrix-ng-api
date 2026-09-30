@@ -11,16 +11,23 @@ export type AwtrixErrorCode =
   | 'invalidOrigin'
   | 'badRequest'
   | 'wrongChip'
+  | 'invalidPackage'
+  | 'wrongTarget'
   | 'unauthorized'
   | 'forbidden'
+  | 'forbiddenOrigin'
   | 'notFound'
   | 'methodNotAllowed'
   | 'scriptChanged'
+  | 'notNewer'
+  | 'updateBusy'
   | 'payloadTooLarge'
+  | 'insufficientMemory'
   | 'unsupportedMediaType'
   | 'validationFailed'
   | 'internalError'
   | 'storageError'
+  | 'notSupported'
   | 'unavailable'
   | 'serviceBusy'
   | 'insufficientStorage'
@@ -98,7 +105,7 @@ export class AwtrixApiError extends AwtrixError {
     return this.status === 404;
   }
 
-  /** `409` - the script source changed in the meantime. */
+  /** `409` - the script source changed, or (TC002) the update is not newer / another update runs. */
   get isConflict(): boolean {
     return this.status === 409;
   }

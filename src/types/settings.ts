@@ -10,6 +10,10 @@ export type DateOrder = 'dayMonthYear' | 'monthDayYear' | 'yearMonthDay';
 export type DateSeparator = 'dot' | 'slash' | 'dash';
 export type DateYearMode = 'none' | 'twoDigit' | 'fourDigit';
 export type TransitionDirection = 'normal' | 'reverse';
+/** Ulanzi TC002 clock faces. */
+export type ClockFace = 'sheet' | 'ring' | 'flap' | 'month' | 'big';
+/** TC002 only: what music visualizer apps react to. */
+export type AudioAnalysisSource = 'auto' | 'playback' | 'microphone';
 
 /** The seven-segment weekday bar of the Time and Date apps. */
 export interface WeekdayBar {
@@ -69,7 +73,10 @@ export interface Settings {
   transitionDurationMs: number;
 
   /* --- Clock app --- */
+  /** Ignored on the TC002, which uses {@link clockFace}. */
   timeMode: TimeMode;
+  /** Since 1.1.4. Ulanzi TC002 only; other devices store it and ignore it. Default `sheet`. */
+  clockFace?: ClockFace;
   /** `null` = inherit `textColor`. */
   timeColor: HexColor | null;
   calendarHeaderColor: HexColor;
@@ -108,7 +115,10 @@ export interface Settings {
   dfplayerVolume: number;
   mp3Volume: number;
   radioVolume: number;
-  radioMeta: boolean;
+  /** Since 1.1.4. TC002 only. Default `auto`. */
+  audioAnalysisSource?: AudioAnalysisSource;
+  /** @deprecated Removed in firmware 1.1.4; only reported by older firmware. */
+  radioMeta?: boolean;
 
   /* --- Buttons --- */
   blockNavigation: boolean;

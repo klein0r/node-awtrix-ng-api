@@ -3,11 +3,13 @@ import { AudioApi } from './api/audio.js';
 import { DeviceApi } from './api/device.js';
 import { DisplayApi } from './api/display.js';
 import { FilesApi } from './api/files.js';
+import { GamepadApi } from './api/gamepad.js';
 import { IndicatorsApi } from './api/indicators.js';
 import { NotificationsApi } from './api/notifications.js';
 import { ScriptsApi } from './api/scripts.js';
 import { SettingsApi } from './api/settings.js';
 import { SystemApi } from './api/system.js';
+import { VoiceApi } from './api/voice.js';
 import { HttpTransport, type AwtrixClientOptions } from './http.js';
 
 /**
@@ -46,6 +48,10 @@ export class AwtrixClient {
   readonly system: SystemApi;
   /** File system and icon origins. */
   readonly files: FilesApi;
+  /** Bluetooth gamepad (1.1.4+, TC002). */
+  readonly gamepad: GamepadApi;
+  /** Home Assistant Voice status (1.1.4+, TC002). */
+  readonly voice: VoiceApi;
 
   constructor(options: AwtrixClientOptions | string) {
     const transport = new HttpTransport(typeof options === 'string' ? { host: options } : options);
@@ -60,5 +66,7 @@ export class AwtrixClient {
     this.audio = new AudioApi(transport);
     this.system = new SystemApi(transport);
     this.files = new FilesApi(transport);
+    this.gamepad = new GamepadApi(transport);
+    this.voice = new VoiceApi(transport);
   }
 }

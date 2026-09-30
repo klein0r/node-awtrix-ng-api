@@ -1,6 +1,7 @@
 export * from './common.js';
 export * from './visuals.js';
 export * from './payload.js';
+export * from './layout.js';
 export * from './settings.js';
 export * from './device.js';
 export * from './apps.js';
