@@ -15,7 +15,7 @@ Requires Node.js 22 or newer.
 | | Version |
 |---|---|
 | AWTRIX NG HTTP API | v1 |
-| AWTRIX NG firmware | built against 1.1.4 (closed beta, incl. Ulanzi TC002); compatible with [1.1.2](https://github.com/Blueforcer/awtrix-ng/releases/tag/v1.1.2) |
+| AWTRIX NG firmware | built against 1.1.4 (closed beta, incl. Ulanzi TC002), verified on a TC002 running 1.1.5; compatible with [1.1.2](https://github.com/Blueforcer/awtrix-ng/releases/tag/v1.1.2) |
 
 Older 1.x firmware works for everything it already supports. Response fields added in 1.1.4 are typed as optional, and `radioMeta` (removed in 1.1.4) is kept as a deprecated optional setting. Fields and routes a device does not know yet are rejected by it with `422` or `404`.
 
@@ -28,6 +28,8 @@ Added in 1.1.4:
 - Bluetooth gamepad (`gamepad`) and Home Assistant Voice status (`voice`) on the TC002
 - Settings `clockFace` and `audioAnalysisSource`, system `panelHeight` and display mirroring
 - TC002 firmware packages (`.awup`) via `system.updateFirmware`
+
+On fixed hardware such as the TC002, `system.get()` omits the panel and pin fields, so they are optional in `SystemConfig`.
 
 Changing the Home Assistant Voice settings is not offered: the firmware accepts that only from the device's own web page.
 

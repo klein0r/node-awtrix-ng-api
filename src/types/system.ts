@@ -81,22 +81,22 @@ export interface SystemConfig {
   /** %, `0..100`; `0` = off. */
   lowBatteryThreshold: number;
 
-  /* --- Panel --- */
+  /* --- Panel (absent on fixed hardware such as the TC002) --- */
   /** `1..128`; `panelWidth * panels` must be `32..128`. */
-  panelWidth: number;
-  /** Since 1.1.4. `8..32`, default `8`; total pixels at most 1024 (4096 with PSRAM). TC002: fixed at 16. */
+  panelWidth?: number;
+  /** Since 1.1.4. `8..32`, default `8`; total pixels at most 1024 (4096 with PSRAM). */
   panelHeight?: number;
   /** `1..128`. */
-  panels: number;
-  panelStart: PanelStart;
-  panelWiring: PanelWiring;
-  panelColorOrder: PanelColorOrder;
-  panelSerpentine: boolean;
+  panels?: number;
+  panelStart?: PanelStart;
+  panelWiring?: PanelWiring;
+  panelColorOrder?: PanelColorOrder;
+  panelSerpentine?: boolean;
   panelChainReverse?: boolean;
   panelChainSerpentine?: boolean;
-  mirror: boolean;
+  mirror?: boolean;
   /** 180° rotation, also swaps the left/right buttons. */
-  rotate: boolean;
+  rotate?: boolean;
   swapButtons: boolean;
 
   /* --- Peripherals / misc --- */
@@ -127,24 +127,24 @@ export interface SystemConfig {
   /** Applies after a reboot. */
   scriptingEnabled: boolean;
 
-  /* --- GPIO map (-1 = disabled) --- */
-  pinMatrix: number;
-  pinBtnLeft: number;
-  pinBtnSelect: number;
-  pinBtnRight: number;
-  pinBattery: number;
-  pinLdr: number;
-  pinBuzzer: number;
-  pinI2cSda: number;
-  pinI2cScl: number;
-  pinDfRx: number;
-  pinDfTx: number;
+  /* --- GPIO map (-1 = disabled; absent on fixed hardware such as the TC002) --- */
+  pinMatrix?: number;
+  pinBtnLeft?: number;
+  pinBtnSelect?: number;
+  pinBtnRight?: number;
+  pinBattery?: number;
+  pinLdr?: number;
+  pinBuzzer?: number;
+  pinI2cSda?: number;
+  pinI2cScl?: number;
+  pinDfRx?: number;
+  pinDfTx?: number;
   /** ESP32-S3 only. Set all three I²S bus pins together or none. */
-  pinI2sBclk: number;
-  pinI2sLrclk: number;
-  pinI2sDout: number;
-  pinI2sMclk: number;
-  pinAmpEnable: number;
+  pinI2sBclk?: number;
+  pinI2sLrclk?: number;
+  pinI2sDout?: number;
+  pinI2sMclk?: number;
+  pinAmpEnable?: number;
 }
 
 /** `GET /api/v1/system?secrets=1`. */
@@ -291,6 +291,8 @@ export interface Capabilities {
   voice?: true;
   /** Since 1.1.4. */
   display?: DisplayCapabilities;
+  /** Since 1.1.5: audio inputs, e.g. `{ microphone: true }` on the TC002. */
+  audioInputs?: { microphone?: boolean; [input: string]: boolean | undefined };
   /** Since 1.1.4: fonts usable in payloads and layouts. */
   fonts?: FontInfo[];
   /** Since 1.1.4: limits of region layouts. */

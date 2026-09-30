@@ -53,6 +53,11 @@ The `beta-tc002` branch targets firmware 1.1.4 (closed beta, adds the Ulanzi TC0
 - Response fields added later are optional (`Since 1.1.4` in the doc comment), and removed ones stay as `@deprecated` optionals (e.g. `radioMeta`).
 - A new route that replaces an old read falls back on `404`/`405` (see `audio.getStations`).
 - `test/firmware-1.1.4.test.ts` covers the beta additions.
+- `test/fixtures/tc002-1.1.5.ts` holds real TC002 responses checked with `satisfies`. Refresh it from a device when the types change, and replace network names and addresses first.
+
+Verified on a real TC002 (1.1.5):
+- The script source upload accepts `Content-Type: text/plain`. The OpenAPI claim of `415` is wrong; `http.md` is right.
+- `PUT /api/v1/apps/pushed/next` (a reserved name) is accepted by the device, but such an app can then not be deleted (`DELETE /api/v1/apps/next` is `405`). The client-side reserved-name check prevents this; keep it.
 
 The authoritative sources are in the firmware repo: `docs/reference/http.md`, `docs/reference/payload.md`, `docs/reference/settings.md` and `docs/api/openapi.yaml`. They contradict each other in places. When they do, the firmware source (`src/core/api/*.cpp`) was used to decide, and future changes should be checked the same way. Decisions made that way:
 - a script `error` is an object `{message, line?, hook?}` or `null`
