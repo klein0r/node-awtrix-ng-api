@@ -1,9 +1,18 @@
 import type { RequestOptions } from '../http.js';
 import { AwtrixValidationError } from '../errors.js';
-import type { ScriptConfig, ScriptConfigUpdate, ScriptWriteResult, SharedValue } from '../types/apps.js';
+import type {
+  ScriptConfig,
+  ScriptConfigUpdate,
+  ScriptData,
+  ScriptDataUpdate,
+  ScriptSoundList,
+  ScriptWriteResult,
+  SharedValue,
+} from '../types/apps.js';
 import type { AppName, OkResponse } from '../types/common.js';
-import { assertAppName, assertNonEmptyObject, segment } from '../validation.js';
-import { ApiModule } from './base.js';
+import type { UploadContent } from '../types/files.js';
+import { assertAppName, assertNonEmptyObject, normalizeMp3Name, segment } from '../validation.js';
+import { ApiModule, toFormData, UPLOAD_TIMEOUT } from './base.js';
 
 /** Berry scripts: source, install, settings and the shared key/value space. */
 export class ScriptsApi extends ApiModule {
@@ -57,7 +66,10 @@ export class ScriptsApi extends ApiModule {
     });
   }
 
-  /** Removes a script together with its persisted store (`DELETE /api/v1/apps/{name}`). */
+  /**
+   * Removes a script together with its persisted store (`DELETE /api/v1/apps/{name}`). Its own
+   * sounds stay (1.1.4+); remove them with {@link deleteAllSounds}.
+   */
   async delete(name: AppName, options?: RequestOptions): Promise<OkResponse> {
     assertAppName(name);
     return this.ok({ method: 'DELETE', path: `/api/v1/apps/${segment(name)}`, options });
@@ -82,6 +94,67 @@ export class ScriptsApi extends ApiModule {
       }
     }
     return this.json({ method: 'PATCH', path: `/api/v1/apps/${segment(name)}/config`, json: values, options });
+  }
+
+  /* --- Saved data (1.1.4+) --- */
+
+  /**
+   * `GET /api/v1/apps/{name}/data` - what the script saved with `store.set()`, without its
+   * `@config` settings. `{}` when it saved nothing.
+   */
+  async getData(name: AppName, options?: RequestOptions): Promise<ScriptData> {
+    assertAppName(name);
+    return this.json(this.read(`/api/v1/apps/${segment(name)}/data`, options));
+  }
+
+  /**
+   * `PATCH /api/v1/apps/{name}/data` - changes saved values and restarts the script. `null`
+   * removes a key. Keys that are `@config` settings are refused with `422`; use
+   * {@link updateConfig} for those.
+   */
+  async updateData(name: AppName, values: ScriptDataUpdate, options?: RequestOptions): Promise<ScriptWriteResult> {
+    assertAppName(name);
+    assertNonEmptyObject(values, 'values');
+    return this.json({ method: 'PATCH', path: `/api/v1/apps/${segment(name)}/data`, json: values, options });
+  }
+
+  /* --- Own sounds (1.1.4+) --- */
+
+  /** `GET /api/v1/apps/script/{name}/sounds` - the script's own MP3s with their SHA-256. */
+  async listSounds(name: AppName, options?: RequestOptions): Promise<ScriptSoundList> {
+    assertAppName(name);
+    return this.json(this.read(`/api/v1/apps/script/${segment(name)}/sounds`, options));
+  }
+
+  /**
+   * `POST /api/v1/apps/script/{name}/sounds` - uploads one MP3 into the script's folder,
+   * replacing a sound of the same name. The script must be installed first.
+   */
+  async uploadSound(name: AppName, soundName: string, content: UploadContent, options?: RequestOptions): Promise<OkResponse> {
+    assertAppName(name);
+    const fileName = `${normalizeMp3Name(soundName)}.mp3`;
+    return this.ok({
+      method: 'POST',
+      path: `/api/v1/apps/script/${segment(name)}/sounds`,
+      body: toFormData('file', content, fileName, 'audio/mpeg'),
+      options: { timeout: UPLOAD_TIMEOUT, ...options },
+    });
+  }
+
+  /** `DELETE /api/v1/apps/script/{name}/sounds/{sound}` - `soundName` with or without `.mp3`. */
+  async deleteSound(name: AppName, soundName: string, options?: RequestOptions): Promise<OkResponse> {
+    assertAppName(name);
+    const sound = normalizeMp3Name(soundName);
+    return this.ok({ method: 'DELETE', path: `/api/v1/apps/script/${segment(name)}/sounds/${segment(sound)}`, options });
+  }
+
+  /**
+   * `DELETE /api/v1/apps/script/{name}/sounds` - deletes all of the script's sounds. Deleting a
+   * script keeps its sounds, so this is how they are removed.
+   */
+  async deleteAllSounds(name: AppName, options?: RequestOptions): Promise<OkResponse> {
+    assertAppName(name);
+    return this.ok({ method: 'DELETE', path: `/api/v1/apps/script/${segment(name)}/sounds`, options });
   }
 
   /** `GET /api/v1/scripts/shared` - what scripts have published to each other (volatile). */

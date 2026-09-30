@@ -42,6 +42,9 @@ export class DeviceApi extends ApiModule {
   /**
    * `POST /api/v1/device/sleep` - deep-sleep for `durationMs`, then boot normally. The select
    * button only wakes the device early when it sits on an RTC pin.
+   *
+   * **ESP32 only.** A TC002 has no timed sleep: the route stops the clock and nothing wakes it
+   * again. Use `display.setPower(false)` to blank a TC002.
    */
   async sleep(durationMs: number, options?: RequestOptions): Promise<OkResponse> {
     assertInteger(durationMs, 'durationMs', 1, Number.MAX_SAFE_INTEGER);

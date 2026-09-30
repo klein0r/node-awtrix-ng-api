@@ -18,7 +18,10 @@ export class AppsApi extends ApiModule {
     return this.json(this.read('/api/v1/apps', options));
   }
 
-  /** `PUT /api/v1/apps/active` - shows the app. Rejects with `404` for an unknown app. */
+  /**
+   * `PUT /api/v1/apps/active` - shows the app. Rejects with `404` for an unknown app. Naming an
+   * `@ondemand` script (1.1.4+) starts it; that can fail with `503` or `507` for lack of memory.
+   */
   async switchTo(name: AppName, options: SwitchAppOptions = {}): Promise<OkResponse> {
     if (typeof name !== 'string' || name.length === 0) {
       throw new AwtrixValidationError('name', 'must be a non-empty string');
