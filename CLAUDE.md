@@ -47,6 +47,8 @@ TypeScript is pinned to `~5.9`. TypeScript 7 removed `moduleResolution: Node10`,
 
 ## API reference sources
 
+The types track a specific firmware release, recorded in `src/version.ts` (`AWTRIX_FIRMWARE_VERSION`) and in the README's Compatibility table. When you sync with a newer firmware, update both, and use the firmware's `RELEASE_NOTES.md` to see what changed.
+
 The authoritative sources are in the firmware repo: `docs/reference/http.md`, `docs/reference/payload.md`, `docs/reference/settings.md` and `docs/api/openapi.yaml`. They contradict each other in places. When they do, the firmware source (`src/core/api/*.cpp`) was used to decide, and future changes should be checked the same way. Decisions made that way:
 - a script `error` is an object `{message, line?, hook?}` or `null`
 - `overlaySettings.blend` is a boolean

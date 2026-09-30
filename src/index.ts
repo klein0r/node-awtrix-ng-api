@@ -1,4 +1,5 @@
 export { AwtrixClient } from './client.js';
+export { AWTRIX_API_VERSION, AWTRIX_FIRMWARE_VERSION } from './version.js';
 export type { AwtrixAuth, AwtrixClientOptions, RequestOptions } from './http.js';
 
 export {

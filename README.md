@@ -10,6 +10,22 @@ Type-safe Node.js client for the [AWTRIX NG](https://github.com/Blueforcer/awtri
 
 Requires Node.js 22 or newer.
 
+## Compatibility
+
+| | Version |
+|---|---|
+| AWTRIX NG HTTP API | v1 |
+| AWTRIX NG firmware | built against [1.1.2](https://github.com/Blueforcer/awtrix-ng/releases/tag/v1.1.2) |
+
+Older 1.x firmware works for everything it already supports. Fields and routes added later, such as `icons` and `iconGap` in payloads, are rejected by such a device with `422` or `404`. You can read the versions at runtime:
+
+```ts
+import { AWTRIX_FIRMWARE_VERSION } from 'awtrix-ng-api';
+
+const deviceVersion = await awtrix.device.version(); // e.g. "1.1.2"
+console.log(`device runs ${deviceVersion}, client built against ${AWTRIX_FIRMWARE_VERSION}`);
+```
+
 ## Installation
 
 ```bash
