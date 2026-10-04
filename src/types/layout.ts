@@ -94,7 +94,7 @@ export type TextRegion = RegionBase &
 /** `color` is accepted by the device but unused for images. */
 export type IconRegion = RegionBase &
   RegionColor & {
-  /** Icon ID (up to 64 chars) or a GIF/JPEG data URL, at most 8192 bytes. */
+  /** Icon ID (up to 64 chars), a GIF/JPEG data URL or an `http(s)://` address; at most 8192 bytes. */
   icon: string;
 } & Without<'icon'>;
 

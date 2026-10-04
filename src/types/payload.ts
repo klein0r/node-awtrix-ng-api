@@ -15,7 +15,7 @@ export interface TextFragment {
 
 /** An additional, independently animated icon at an absolute position. */
 export interface PlacedIcon {
-  /** Icon ID (up to 64 chars) or a data URL (`data:image/gif;base64,...` / `data:image/jpeg;base64,...`). */
+  /** Icon ID (up to 64 chars), a GIF/JPEG data URL, or an `http(s)://` address (TC002). */
   icon: string;
   /** `-65535..65535`, default `0`. */
   x?: number;
@@ -24,6 +24,8 @@ export interface PlacedIcon {
 }
 
 export type TextCase = 'inherit' | 'upper' | 'asTyped';
+/** Where still text sits: after the icon / left edge, centered, or at the right edge. */
+export type TextAlign = 'start' | 'center' | 'end';
 /** `small`, `large` or (since 1.1.4) any name from `capabilities.fonts`. */
 export type FontName = LooseString<'small' | 'large'>;
 export type IconMode = 'fixed' | 'pushOnce' | 'push';
@@ -104,8 +106,8 @@ export interface ClassicAppPayload extends PayloadTiming {
   textBlinkMs?: number;
   /** Sinusoidal fade period in ms, `0` = off. */
   textFadeMs?: number;
-  /** Center text that fits (default `true`); `false` left-aligns. */
-  textCenter?: boolean;
+  /** Where text that is not moving sits. Default `center`. No effect while the text scrolls. */
+  textAlign?: TextAlign;
   /** Text motion; every omitted field is inherited from the global setting. */
   scroll?: ScrollInput;
   /** X shift in px applied after positioning. */
@@ -115,9 +117,9 @@ export interface ClassicAppPayload extends PayloadTiming {
 
   /* --- Icon --- */
   /**
-   * Icon ID (resolved as `/ICONS/<id>.gif`, then `.jpg`) or the image as a data URL
-   * (`data:image/gif;base64,...` / `data:image/jpeg;base64,...`). Firmware before 1.1.4 took
-   * plain base64 longer than 64 characters instead.
+   * Icon ID (resolved as `/ICONS/<id>.gif`, then `.jpg`), the image as a data URL
+   * (`data:image/gif;base64,...` / `data:image/jpeg;base64,...`), or an `http(s)://` address
+   * of a GIF, JPEG or PNG up to 2048 characters (TC002 only; other clocks show no icon).
    */
   icon?: string;
   /** Whether approaching text shoves the icon aside. Default `fixed`. */

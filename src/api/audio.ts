@@ -115,7 +115,8 @@ export class AudioApi extends ApiModule {
 
   /**
    * `PUT /api/v1/audio/melodies/{name}` - stores a melody. The RTTTL title is normalised
-   * to `name`. `created` tells a new melody from a replaced one.
+   * to `name`. `created` tells a new melody from a replaced one. Rejects with `409 nameTaken`
+   * when an MP3 of that name exists - an MP3 and a melody never share a name.
    */
   async saveMelody(name: string, rtttl: string, options?: RequestOptions): Promise<MelodySaveResult> {
     assertMelodyName(name);
@@ -144,7 +145,8 @@ export class AudioApi extends ApiModule {
 
   /**
    * `POST /api/v1/audio/mp3` - uploads one MP3. `name` is what it is played by
-   * (`[A-Za-z0-9_-]{1,32}`, `.mp3` is appended when missing).
+   * (`[A-Za-z0-9_-]{1,32}`, `.mp3` is appended when missing). Rejects with `409 nameTaken`
+   * when a melody of that name exists.
    */
   async uploadMp3(name: string, content: UploadContent, options?: RequestOptions): Promise<OkResponse> {
     const fileName = `${normalizeMp3Name(name)}.mp3`;

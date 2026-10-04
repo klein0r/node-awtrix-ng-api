@@ -54,7 +54,7 @@ The `beta-1.1.7` branch targets firmware 1.1.7 (closed beta, Ulanzi TC002). Its 
 
 Sound, notification sounds, sound settings and the gamepad follow 1.1.7 only, with no fallback to the older format: the user chose to implement only what the beta documents, because the ESP32 firmware is expected to follow. Only fields the documentation describes are typed. Fields a device sends beyond that (on 1.1.7: `gamepad.remote`, `capabilities.gamepadRemote`) are left out, also from the fixtures.
 
-When the docs change, diff the new spec against the previous one, not just against the code. A name-based check misses nested additions (e.g. `voice.config.device`). Then:
+When the docs change, read the release notes first (https://ang.blueforcer.de/releases/), then diff the new spec against the previous one, not just against the code. A name-based check misses nested additions (e.g. `voice.config.device`). The payload keys are not in the OpenAPI spec at all; they live only on `reference/payload/` and must be compared separately (that is how `textAlign` replacing `textCenter` in 1.1.7 was found). Then:
 - Compare each schema's keys both ways with the TS interfaces, so removed fields are caught too.
 - `test/firmware-beta.test.ts` covers the beta-only routes.
 - `test/fixtures/tc002-1.1.7.ts` holds real TC002 responses checked with `satisfies`. Refresh it from a device when the types change, and replace network names and addresses first.
@@ -62,10 +62,11 @@ When the docs change, diff the new spec against the previous one, not just again
 Verified on a real TC002 (1.1.7):
 - Every documented sound, gamepad, built-in config and MQTT TLS behaviour matched, including the error messages.
 - `POST /api/v1/icons/rename` is documented but answers `404 unknown route` on 1.1.7.
+- `textCenter` is no longer documented. The device still accepts it without even checking its type, but it is not typed; `textAlign` replaces it.
 
 Verified on a real TC002 (1.1.5), still relevant:
 - The script source upload accepts `Content-Type: text/plain`. The OpenAPI claim of `415` is wrong; `http.md` is right.
-- `PUT /api/v1/apps/pushed/next` (a reserved name) is accepted by the device, but such an app can then not be deleted (`DELETE /api/v1/apps/next` is `405`). The client-side reserved-name check prevents this; keep it.
+- `PUT /api/v1/apps/pushed/next` (a reserved name) was accepted by firmware up to 1.1.5, and such an app could then not be deleted (`DELETE /api/v1/apps/next` is `405`). 1.1.6 fixed this (`400 invalidName`). Keep the client-side reserved-name check for older devices.
 
 The authoritative sources are in the firmware repo: `docs/reference/http.md`, `docs/reference/payload.md`, `docs/reference/settings.md` and `docs/api/openapi.yaml`. They contradict each other in places. When they do, the firmware source (`src/core/api/*.cpp`) was used to decide, and future changes should be checked the same way. Decisions made that way:
 - a script `error` is an object `{message, line?, hook?}` or `null`

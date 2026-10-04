@@ -102,7 +102,10 @@ export interface Settings {
   dateColor: HexColor | null;
 
   /* --- Weekday bar --- */
-  /** The clock's weekday bar. */
+  /**
+   * The clock's weekday bar. In a `PATCH /api/v1/settings` it sets **both** bars (clock and Date
+   * app); use `dateWeekdayBar`, or `apps.updateBuiltinConfig('Time', ...)`, to set one.
+   */
   weekdayBar: WeekdayBar;
   /** The Date app's own weekday bar. A `PATCH` with it sets only this bar. */
   dateWeekdayBar: WeekdayBar;

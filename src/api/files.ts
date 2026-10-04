@@ -19,6 +19,7 @@ export class FilesApi extends ApiModule {
   /**
    * `POST /api/v1/files?dir=` - uploads one file. The content must match the folder:
    * `/ICONS` GIF or JPEG, `/MELODIES` RTTTL text, `/PALETTES` `RRGGBB` lines, `/MP3` MP3.
+   * An MP3 and a melody never share a name: a clash rejects with `409 nameTaken`.
    */
   async upload(dir: Exclude<AssetDirectory, '/SCRIPTS'>, fileName: string, content: UploadContent, options?: RequestOptions): Promise<OkResponse> {
     if (!WRITABLE_DIRECTORIES.includes(dir)) {

@@ -17,13 +17,15 @@ Requires Node.js 22 or newer.
 | AWTRIX NG HTTP API | v1 |
 | AWTRIX NG firmware | built against 1.1.7 (closed beta, incl. Ulanzi TC002), verified on a TC002 running 1.1.7 |
 
-The 1.1.7 beta reworked sound, and this version of the library follows it. **Firmware 1.1.6 and older is not supported** for sound, notification sounds, sound settings and the gamepad; the ESP32 firmware is expected to follow. Use 0.2.x for firmware 1.1.2 to 1.1.5.
+The 1.1.6/1.1.7 betas reworked sound, and this version of the library follows it. **Firmware 1.1.6 and older is not supported** for sound, notification sounds, sound settings and the gamepad; the ESP32 firmware is expected to follow. Use 0.2.x for firmware 1.1.2 to 1.1.5.
 
-Changed in 1.1.7:
+Changed in 1.1.6/1.1.7 (see the [release notes](https://ang.blueforcer.de/releases/)):
 
 - Sound: `audio.play()` takes a stored name, one sound object (`file`, `rtttl`, `song`, `speech`, `track` or `station`, plus `loop`) or a list of 1-4 alternatives. `audio.stop()` takes a group (`alert`, `app`, `radio`).
 - Notifications take the same sound in `sound`; `soundRtttl` and `soundLoop` are gone.
 - Settings: one master `volume` with `alertVolume`, `appVolume` and `radioVolume`; `musicSource`, `bootSound`, `calendarAnimation` and `dateWeekdayBar` are new. `soundEnabled` and the per-output volumes are gone.
+- Payload: `textAlign` (`start`, `center`, `end`) replaces `textCenter`; `icon` also takes an `http(s)://` address (TC002).
+- Melodies and MP3s can no longer share a name (`409 nameTaken`).
 - Gamepads use two slots: `gamepad.get()` lists both, `pair()` returns the slot, `forget(slot)`.
 - New: `audio.playClip()` (a WAV or MP3 played once, TC002), built-in app settings (`apps.getBuiltinConfig` / `updateBuiltinConfig`), MQTT over TLS (`system.getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`) and `files.renameIcon()`.
 

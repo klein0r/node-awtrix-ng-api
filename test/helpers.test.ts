@@ -103,6 +103,11 @@ describe('type safety', () => {
     };
     // @ts-expect-error - unknown payload key
     const typo: NotificationPayload = { txt: 'Hi' };
+    // @ts-expect-error - textCenter is no longer documented; use textAlign
+    const oldCenter: NotificationPayload = { text: 'Hi', textCenter: false };
+    // @ts-expect-error - textAlign takes start, center or end
+    const badAlign: NotificationPayload = { text: 'Hi', textAlign: 'middle' };
+    const aligned: NotificationPayload = { text: '42', textAlign: 'end' };
     // @ts-expect-error - invalid enum value
     const badMode: NotificationPayload = { scroll: { mode: 'zigzag' } };
 
@@ -111,7 +116,7 @@ describe('type safety', () => {
     const nullText: SettingsUpdate = { textColor: null };
     // @ts-expect-error - timeMode is 0..6
     const badTimeMode: SettingsUpdate = { timeMode: 7 };
-    expect([notification, typo, badMode, settings, nullText, badTimeMode]).toHaveLength(6);
+    expect([notification, typo, oldCenter, badAlign, aligned, badMode, settings, nullText, badTimeMode]).toHaveLength(9);
   });
 
   it('narrows discriminated unions', () => {
