@@ -15,23 +15,21 @@ Requires Node.js 22 or newer.
 | | Version |
 |---|---|
 | AWTRIX NG HTTP API | v1 |
-| AWTRIX NG firmware | built against 1.1.4 (closed beta, incl. Ulanzi TC002), verified on a TC002 running 1.1.5; compatible with [1.1.2](https://github.com/Blueforcer/awtrix-ng/releases/tag/v1.1.2) |
+| AWTRIX NG firmware | built against 1.1.7 (closed beta, incl. Ulanzi TC002), verified on a TC002 running 1.1.7 |
 
-Older 1.x firmware works for everything it already supports. Response fields added in 1.1.4 are typed as optional, and `radioMeta` (removed in 1.1.4) is kept as a deprecated optional setting. Fields and routes a device does not know yet are rejected by it with `422` or `404`.
+The 1.1.7 beta reworked sound, and this version of the library follows it. **Firmware 1.1.6 and older is not supported** for sound, notification sounds, sound settings and the gamepad; the ESP32 firmware is expected to follow. Use 0.2.x for firmware 1.1.2 to 1.1.5.
 
-Added in 1.1.4:
+Changed in 1.1.7:
 
-- Region layouts: the `layout` key in pushed apps and notifications, as an alternative to the classic keys
-- Icons as data URLs (`data:image/gif;base64,...`) instead of plain base64; fonts from `capabilities.fonts`
-- Script data (`scripts.getData`/`updateData`) and a script's own sounds (`scripts.listSounds`, `uploadSound`, ...)
-- Audio sources `sfx`, `loop`, `song` and `fx` (mixer and synthesizer on the TC002), stop scope `loop`
-- Bluetooth gamepad (`gamepad`) and Home Assistant Voice status (`voice`) on the TC002
-- Settings `clockFace` and `audioAnalysisSource`, system `panelHeight` and display mirroring
-- TC002 firmware packages (`.awup`) via `system.updateFirmware`
+- Sound: `audio.play()` takes a stored name, one sound object (`file`, `rtttl`, `song`, `speech`, `track` or `station`, plus `loop`) or a list of 1-4 alternatives. `audio.stop()` takes a group (`alert`, `app`, `radio`).
+- Notifications take the same sound in `sound`; `soundRtttl` and `soundLoop` are gone.
+- Settings: one master `volume` with `alertVolume`, `appVolume` and `radioVolume`; `musicSource`, `bootSound`, `calendarAnimation` and `dateWeekdayBar` are new. `soundEnabled` and the per-output volumes are gone.
+- Gamepads use two slots: `gamepad.get()` lists both, `pair()` returns the slot, `forget(slot)`.
+- New: `audio.playClip()` (a WAV or MP3 played once, TC002), built-in app settings (`apps.getBuiltinConfig` / `updateBuiltinConfig`), MQTT over TLS (`system.getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`) and `files.renameIcon()`.
 
-On fixed hardware such as the TC002, `system.get()` omits the panel and pin fields, so they are optional in `SystemConfig`.
+Also part of the beta: region layouts (`layout`), data URL icons, fonts from `capabilities.fonts`, script data and sounds, Home Assistant Voice status and TC002 update packages (`.awup`).
 
-Changing the Home Assistant Voice settings is not offered: the firmware accepts that only from the device's own web page.
+On fixed hardware such as the TC002, `system.get()` omits the panel and pin fields, so they are optional in `SystemConfig`. Changing the Home Assistant Voice settings is not offered: the firmware accepts that only from the device's own web page. `files.renameIcon()` follows the documentation, but a TC002 on 1.1.7 does not have the route yet and answers `404`.
 
 You can read the versions at runtime:
 
@@ -63,7 +61,7 @@ await awtrix.notifications.send({
   icon: '1234',
   textColor: '#FF0000',
   hold: true,
-  soundRtttl: 'd:d=4,o=5,b=120:c,e,g',
+  sound: { rtttl: 'd:d=4,o=5,b=120:c,e,g' },
 });
 ```
 
@@ -106,13 +104,13 @@ The client groups the routes into namespaces. All methods return promises.
 | `device` | `get`, `version`, `capabilities`, `reboot`, `sleep`, `factoryReset`, `ping`, `waitForOnline` | `/api/v1/device`, `/api/v1/version`, `/api/v1/capabilities`, `/version` |
 | `settings` | `get`, `update`, `setBrightness`, `reset` | `/api/v1/settings` |
 | `display` | `get`, `update`, `setPower`, `setOverlay`, `clearOverlay`, `setMoodlight`, `disableMoodlight`, `getScreen` | `/api/v1/display` |
-| `apps` | `list`, `switchTo`, `next`, `previous`, `setOrder`, `disable`, `push`, `delete` | `/api/v1/apps` |
+| `apps` | `list`, `switchTo`, `next`, `previous`, `setOrder`, `disable`, `push`, `delete`, `getBuiltinConfig`, `updateBuiltinConfig` | `/api/v1/apps`, `/api/v1/apps/builtin/{name}/config` |
 | `scripts` | `getSource`, `install`, `updateIfUnchanged`, `delete`, `getConfig`, `updateConfig`, `getData`, `updateData`, `listSounds`, `uploadSound`, `deleteSound`, `deleteAllSounds`, `getShared` | `/api/v1/apps/script`, `/api/v1/apps/{name}/config`, `/api/v1/apps/{name}/data`, `/api/v1/scripts/shared` |
 | `notifications` | `send`, `dismiss`, `dismissByName` | `/api/v1/notifications` |
 | `indicators` | `set`, `clear` | `/api/v1/indicators/{1-3}` |
-| `audio` | `getState`, `play`, `playSound`, `playRtttl`, `playStation`, `playUrl`, `playSfx`, `playLoop`, `playSong`, `playFx`, `stop`, `listMelodies`, `saveMelody`, `deleteMelody`, `listMp3`, `uploadMp3`, `deleteMp3`, `getStations`, `setStations` | `/api/v1/audio` |
-| `system` | `get`, `getWithSecrets`, `update`, `scanWifi`, `waitForWifiScan`, `getLogs`, `updateFirmware`, `restoreBackup` | `/api/v1/system`, `/api/v1/logs`, `/update`, `/api/v1/restore` |
-| `files` | `list`, `upload`, `uploadIcon`, `delete`, `download`, `listIconOrigins`, `setIconOrigin`, `deleteIconOrigin` | `/api/v1/files`, `/api/v1/icons/origins`, static assets |
+| `audio` | `getState`, `play`, `playFile`, `playRtttl`, `playSong`, `speak`, `playTrack`, `playStation`, `playClip`, `stop`, `listMelodies`, `saveMelody`, `deleteMelody`, `listMp3`, `uploadMp3`, `deleteMp3`, `getStations`, `setStations` | `/api/v1/audio` |
+| `system` | `get`, `getWithSecrets`, `update`, `scanWifi`, `waitForWifiScan`, `getLogs`, `getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`, `updateFirmware`, `restoreBackup` | `/api/v1/system`, `/api/v1/logs`, `/api/v1/mqtt/tls`, `/update`, `/api/v1/restore` |
+| `files` | `list`, `upload`, `uploadIcon`, `delete`, `download`, `renameIcon`, `listIconOrigins`, `setIconOrigin`, `deleteIconOrigin` | `/api/v1/files`, `/api/v1/icons/rename`, `/api/v1/icons/origins`, static assets |
 | `gamepad` | `get`, `pair`, `forget` | `/api/v1/gamepad` (TC002) |
 | `voice` | `get` | `/api/v1/voice` (TC002) |
 
@@ -155,12 +153,14 @@ await awtrix.display.setOverlay('snow', { speed: 2 });
 await awtrix.indicators.set(1, { color: '#FF0000', blinkMs: 500 });
 ```
 
-Audio - `play()` accepts exactly one source, enforced by the type system:
+Audio - a sound is a stored name, one sound object or a list of alternatives; the type system enforces exactly one source per object:
 
 ```ts
-await awtrix.audio.play({ rtttl: 'beep:d=4,o=5,b=120:c,e,g' });
-await awtrix.audio.play({ station: 'SWR3' });
-await awtrix.audio.stop('stream');
+await awtrix.audio.play('ding');
+await awtrix.audio.play({ rtttl: 'beep:d=4,o=5,b=120:c,e,g', loop: true });
+await awtrix.audio.play([{ speech: 'The door is open.' }, 'ding']); // first one the clock can play
+await awtrix.audio.playStation('SWR3');
+await awtrix.audio.stop('radio');
 ```
 
 Scripts - a script that does not compile still installs, so check `error`:
