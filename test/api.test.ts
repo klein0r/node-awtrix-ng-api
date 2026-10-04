@@ -248,8 +248,12 @@ describe('scripts', () => {
 
 describe('notifications', () => {
   it('sends and dismisses', async () => {
-    await client.notifications.send({ text: 'Doorbell', icon: '1234', hold: true, name: 'door', soundRtttl: 'd:d=4,o=5,b=120:c,e,g' });
-    expectRequest('POST', '/api/v1/notifications', { text: 'Doorbell', icon: '1234', hold: true, name: 'door', soundRtttl: 'd:d=4,o=5,b=120:c,e,g' });
+    await client.notifications.send({ text: 'Doorbell', icon: '1234', hold: true, name: 'door', sound: { rtttl: 'd:d=4,o=5,b=120:c,e,g', loop: true } });
+    expectRequest('POST', '/api/v1/notifications', { text: 'Doorbell', icon: '1234', hold: true, name: 'door', sound: { rtttl: 'd:d=4,o=5,b=120:c,e,g', loop: true } });
+    await client.notifications.send({ text: 'Door', sound: [{ speech: 'The door is open.' }, 'ding'] });
+    expectRequest('POST', '/api/v1/notifications', { text: 'Door', sound: [{ speech: 'The door is open.' }, 'ding'] });
+    await client.notifications.send({ text: 'Quiet', sound: null });
+    expectRequest('POST', '/api/v1/notifications', { text: 'Quiet', sound: null });
     await client.notifications.dismiss();
     expectRequest('DELETE', '/api/v1/notifications/active');
     await client.notifications.dismissByName('backup job');
@@ -280,30 +284,68 @@ describe('indicators', () => {
 });
 
 describe('audio', () => {
-  it('plays exactly one source', async () => {
-    await client.audio.play({ rtttl: 'beep:d=4,o=5,b=120:c,e,g' });
-    expectRequest('POST', '/api/v1/audio/play', { rtttl: 'beep:d=4,o=5,b=120:c,e,g' });
-    await client.audio.play({ track: 5 });
+  it('plays names, sound objects and lists', async () => {
+    await client.audio.play('ding');
+    expectRequest('POST', '/api/v1/audio/play', 'ding');
+    await client.audio.play({ rtttl: 'beep:d=4,o=5,b=120:c,e,g', loop: true });
+    expectRequest('POST', '/api/v1/audio/play', { rtttl: 'beep:d=4,o=5,b=120:c,e,g', loop: true });
+    await client.audio.play([{ speech: 'Hello' }, 'Racer/boost', 'https://example.com/a.mp3']);
+    expectRequest('POST', '/api/v1/audio/play', [{ speech: 'Hello' }, 'Racer/boost', 'https://example.com/a.mp3']);
+    await client.audio.play({ song: 'bpm 96; lead: c4:4 e g', loop: true, nextBar: true });
+    expectRequest('POST', '/api/v1/audio/play', { song: 'bpm 96; lead: c4:4 e g', loop: true, nextBar: true });
+  });
+
+  it('offers single-source shorthands', async () => {
+    await client.audio.playFile('Racer/boost', { loop: true });
+    expectRequest('POST', '/api/v1/audio/play', { file: 'Racer/boost', loop: true });
+    await client.audio.playRtttl('d=4,o=5,b=100:e,c');
+    expectRequest('POST', '/api/v1/audio/play', { rtttl: 'd=4,o=5,b=100:e,c' });
+    await client.audio.playSong('lead: c4:4');
+    expectRequest('POST', '/api/v1/audio/play', { song: 'lead: c4:4' });
+    await client.audio.speak('The door is open.');
+    expectRequest('POST', '/api/v1/audio/play', { speech: 'The door is open.' });
+    await client.audio.playTrack(5);
     expectRequest('POST', '/api/v1/audio/play', { track: 5 });
     await client.audio.playStation('SWR3');
     expectRequest('POST', '/api/v1/audio/play', { station: 'SWR3' });
-    await client.audio.play({ index: 0 });
-    expectRequest('POST', '/api/v1/audio/play', { index: 0 });
+    await client.audio.playStation(0);
+    expectRequest('POST', '/api/v1/audio/play', { station: 0 });
   });
 
-  it('refuses zero or several sources and bad tracks', async () => {
-    await expect(client.audio.play({} as never)).rejects.toThrow(/exactly one/);
-    await expect(client.audio.play({ sound: 'a', mp3: 'b' } as never)).rejects.toThrow(/exactly one/);
+  it('refuses what the device would reject', async () => {
+    await expect(client.audio.play({} as never)).rejects.toThrow(/needs a sound key/);
+    await expect(client.audio.play({ file: 'a', rtttl: 'b' } as never)).rejects.toThrow(/one sound key only/);
+    await expect(client.audio.play({ mp3: 'old' } as never)).rejects.toThrow(/unknown field/);
     await expect(client.audio.play({ track: 3000 })).rejects.toThrow(/track/);
+    await expect(client.audio.play({ station: 'WDR', loop: true } as never)).rejects.toThrow(/not with station/);
+    await expect(client.audio.play({ song: 'x', nextBar: true } as never)).rejects.toThrow(/looping song/);
+    await expect(client.audio.play(['a', 'b', 'c', 'd', 'e'] as never)).rejects.toThrow(/1 to 4/);
+    await expect(client.audio.play([{ station: 'WDR' }] as never)).rejects.toThrow(/not here/);
+    await expect(client.audio.play('bad name')).rejects.toThrow(/Script\/name/);
+    await expect(client.audio.speak('x'.repeat(513))).rejects.toThrow(/512 bytes/);
+    await expect(client.notifications.send({ text: 'x', sound: { station: 'WDR' } as never })).rejects.toThrow(/not here/);
+    expect(mock.requests).toHaveLength(0);
   });
 
-  it('stops with and without scope', async () => {
+  it('plays clips as raw bytes', async () => {
+    const wav = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(40)]);
+    await client.audio.playClip(wav);
+    expectRequest('POST', '/api/v1/audio/clip');
+    expect(mock.last.headers['content-type']).toBe('audio/wav');
+    expect(mock.last.body.equals(wav)).toBe(true);
+    await client.audio.playClip(new Blob([Buffer.from('ID3mp3')]));
+    expect(mock.last.headers['content-type']).toBe('audio/mpeg');
+    expect(mock.last.text).toBe('ID3mp3');
+    await expect(client.audio.playClip(new Uint8Array())).rejects.toThrow(/empty/);
+  });
+
+  it('stops everything or one group', async () => {
     await client.audio.stop();
     expectRequest('POST', '/api/v1/audio/stop');
     expect(mock.last.body.length).toBe(0);
-    await client.audio.stop('stream');
-    expectRequest('POST', '/api/v1/audio/stop', { scope: 'stream' });
-    await expect(client.audio.stop('radio' as never)).rejects.toThrow(/scope/);
+    await client.audio.stop('radio');
+    expectRequest('POST', '/api/v1/audio/stop', { group: 'radio' });
+    await expect(client.audio.stop('stream' as never)).rejects.toThrow(/group/);
   });
 
   it('manages melodies', async () => {

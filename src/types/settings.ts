@@ -12,8 +12,8 @@ export type DateYearMode = 'none' | 'twoDigit' | 'fourDigit';
 export type TransitionDirection = 'normal' | 'reverse';
 /** Ulanzi TC002 clock faces. */
 export type ClockFace = 'sheet' | 'ring' | 'flap' | 'month' | 'big';
-/** TC002 only: what music visualizer apps react to. */
-export type AudioAnalysisSource = 'auto' | 'playback' | 'microphone';
+/** TC002 only: what music visualizers and `music.pitch()` react to. */
+export type MusicSource = 'auto' | 'playback' | 'microphone';
 
 /** The seven-segment weekday bar of the Time and Date apps. */
 export interface WeekdayBar {
@@ -75,13 +75,15 @@ export interface Settings {
   /* --- Clock app --- */
   /** Ignored on the TC002, which uses {@link clockFace}. */
   timeMode: TimeMode;
-  /** Since 1.1.4. Ulanzi TC002 only; other devices store it and ignore it. Default `sheet`. */
-  clockFace?: ClockFace;
+  /** Ulanzi TC002 only; other devices store it and ignore it. Default `sheet`. */
+  clockFace: ClockFace;
   /** `null` = inherit `textColor`. */
   timeColor: HexColor | null;
   calendarHeaderColor: HexColor;
   calendarTextColor: HexColor;
   calendarBodyColor: HexColor;
+  /** TC002 only: the sheet tears off when the clock appears and at midnight. Other devices store it. */
+  calendarAnimation: boolean;
 
   /* --- Clock text --- */
   time24h: boolean;
@@ -100,7 +102,10 @@ export interface Settings {
   dateColor: HexColor | null;
 
   /* --- Weekday bar --- */
+  /** The clock's weekday bar. */
   weekdayBar: WeekdayBar;
+  /** The Date app's own weekday bar. A `PATCH` with it sets only this bar. */
+  dateWeekdayBar: WeekdayBar;
 
   /* --- Sensor apps --- */
   useCelsius: boolean;
@@ -108,17 +113,19 @@ export interface Settings {
   humidityColor: HexColor | null;
   batteryColor: HexColor | null;
 
-  /* --- Sound --- */
-  /** Mutes one-shot sounds; a radio stream keeps playing. */
-  soundEnabled: boolean;
-  buzzerVolume: number;
-  dfplayerVolume: number;
-  mp3Volume: number;
+  /* --- Sound: every group plays at volume × group volume / 100 --- */
+  /** Master volume `0..100`, default 60 (TC002: 90). `0` silences every sound. The TC002 knob sets it. */
+  volume: number;
+  /** Alert group share `0..100` (notification sounds, `audio.play()`, clips, boot sound, voice answer). Default 100. */
+  alertVolume: number;
+  /** App group share `0..100` (everything a script plays). Default 100. */
+  appVolume: number;
+  /** Radio group share `0..100`. Default 80. */
   radioVolume: number;
-  /** Since 1.1.4. TC002 only. Default `auto`. */
-  audioAnalysisSource?: AudioAnalysisSource;
-  /** @deprecated Removed in firmware 1.1.4; only reported by older firmware. */
-  radioMeta?: boolean;
+  /** TC002 only: play a sound at power-on (at the alert volume). Other devices store it. */
+  bootSound: boolean;
+  /** TC002 only. Default `auto`. */
+  musicSource: MusicSource;
 
   /* --- Buttons --- */
   blockNavigation: boolean;
@@ -142,12 +149,13 @@ type ColorKeys = 'textColor' | 'calendarHeaderColor' | 'calendarTextColor' | 'ca
  * Applied completely or not at all.
  */
 export type SettingsUpdate = Partial<
-  Omit<Settings, NullableColorKeys | ColorKeys | 'scroll' | 'weekdayBar'> & {
+  Omit<Settings, NullableColorKeys | ColorKeys | 'scroll' | 'weekdayBar' | 'dateWeekdayBar'> & {
     [K in NullableColorKeys]: ColorInput | null;
   } & {
     [K in ColorKeys]: ColorInput;
   } & {
     scroll: ScrollInput;
     weekdayBar: WeekdayBarUpdate;
+    dateWeekdayBar: WeekdayBarUpdate;
   }
 >;

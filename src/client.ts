@@ -42,13 +42,13 @@ export class AwtrixClient {
   readonly notifications: NotificationsApi;
   /** The three indicator pixels. */
   readonly indicators: IndicatorsApi;
-  /** Melodies, MP3s, DFPlayer and internet radio. */
+  /** Sounds (stored files, melodies, speech, songs, tracks), clips and internet radio. */
   readonly audio: AudioApi;
   /** Device configuration, Wi-Fi scan, logs, firmware update, backup restore. */
   readonly system: SystemApi;
   /** File system and icon origins. */
   readonly files: FilesApi;
-  /** Bluetooth gamepad (1.1.4+, TC002). */
+  /** Bluetooth gamepads in two slots (TC002). */
   readonly gamepad: GamepadApi;
   /** Home Assistant Voice status (1.1.4+, TC002). */
   readonly voice: VoiceApi;

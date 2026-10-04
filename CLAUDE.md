@@ -41,6 +41,7 @@ TypeScript is pinned to `~5.9`. TypeScript 7 removed `moduleResolution: Node10`,
 - Client-side validation mirrors device rules only where a request can never succeed, or where the firmware would silently corrupt input. Examples: `brightness` for the moodlight and `blinkMs`/`fadeMs` wrap without error on the device, so they are range-checked here. Do not validate stricter than the device: `kelvin` is clamped by the firmware, so it is not checked.
 - Bodyless requests explicitly set `'Content-Type': false`. Otherwise axios adds `application/x-www-form-urlencoded`.
 - axios returns a `Buffer` (an `ArrayBufferView`), not an `ArrayBuffer`, for `responseType: 'arraybuffer'` in Node. Use `toBytes()` in `http.ts`.
+- For a typed-array request body, axios sends `view.buffer`; for a Node.js Buffer that is the whole shared pool. `http.ts` therefore slices raw bytes into an exact `ArrayBuffer`. This is used by `audio.playClip()`.
 - Script source upload (`PUT /api/v1/apps/script/{name}`) is raw text, not JSON. The firmware exempts it from the JSON Content-Type gate.
 - Names that firmware may extend (effects, transitions, overlays, palettes) use `LooseString<Known>` so that new names are accepted while autocompletion is kept.
 - Input and output types differ on purpose: responses have concrete `HexColor` values, while inputs accept `ColorInput` (hex, `[r,g,b]`, `["HSV",h,s,v]`, packed int). See `Settings` vs `SettingsUpdate`.
@@ -49,13 +50,20 @@ TypeScript is pinned to `~5.9`. TypeScript 7 removed `moduleResolution: Node10`,
 
 The types track a specific firmware release, recorded in `src/version.ts` (`AWTRIX_FIRMWARE_VERSION`) and in the README's Compatibility table. When you sync with a newer firmware, update both, and use the firmware's `RELEASE_NOTES.md` to see what changed.
 
-The `beta-tc002` branch targets firmware 1.1.4 (closed beta, adds the Ulanzi TC002). Its docs are at https://ang.blueforcer.de/reference/http/. The raw OpenAPI spec is at https://ang.blueforcer.de/api/openapi.yaml, and plain text of every page is in https://ang.blueforcer.de/search/search_index.json. Diff that spec against `docs/api/openapi.yaml` of the release. Keep 1.1.2 working:
-- Response fields added later are optional (`Since 1.1.4` in the doc comment), and removed ones stay as `@deprecated` optionals (e.g. `radioMeta`).
-- A new route that replaces an old read falls back on `404`/`405` (see `audio.getStations`).
-- `test/firmware-1.1.4.test.ts` covers the beta additions.
-- `test/fixtures/tc002-1.1.5.ts` holds real TC002 responses checked with `satisfies`. Refresh it from a device when the types change, and replace network names and addresses first.
+The `beta-1.1.7` branch targets firmware 1.1.7 (closed beta, Ulanzi TC002). Its docs are at https://ang.blueforcer.de/reference/http/. The raw OpenAPI spec is at https://ang.blueforcer.de/api/openapi.yaml, and plain text of every page is in https://ang.blueforcer.de/search/search_index.json.
 
-Verified on a real TC002 (1.1.5):
+Sound, notification sounds, sound settings and the gamepad follow 1.1.7 only, with no fallback to the older format: the user chose to implement only what the beta documents, because the ESP32 firmware is expected to follow. Only fields the documentation describes are typed. Fields a device sends beyond that (on 1.1.7: `gamepad.remote`, `capabilities.gamepadRemote`) are left out, also from the fixtures.
+
+When the docs change, diff the new spec against the previous one, not just against the code. A name-based check misses nested additions (e.g. `voice.config.device`). Then:
+- Compare each schema's keys both ways with the TS interfaces, so removed fields are caught too.
+- `test/firmware-beta.test.ts` covers the beta-only routes.
+- `test/fixtures/tc002-1.1.7.ts` holds real TC002 responses checked with `satisfies`. Refresh it from a device when the types change, and replace network names and addresses first.
+
+Verified on a real TC002 (1.1.7):
+- Every documented sound, gamepad, built-in config and MQTT TLS behaviour matched, including the error messages.
+- `POST /api/v1/icons/rename` is documented but answers `404 unknown route` on 1.1.7.
+
+Verified on a real TC002 (1.1.5), still relevant:
 - The script source upload accepts `Content-Type: text/plain`. The OpenAPI claim of `415` is wrong; `http.md` is right.
 - `PUT /api/v1/apps/pushed/next` (a reserved name) is accepted by the device, but such an app can then not be deleted (`DELETE /api/v1/apps/next` is `405`). The client-side reserved-name check prevents this; keep it.
 

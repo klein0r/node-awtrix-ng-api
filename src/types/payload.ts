@@ -1,4 +1,5 @@
 import type { ColorInput, LooseString } from './common.js';
+import type { NotificationSound } from './audio.js';
 import type { NativeLayout } from './layout.js';
 import type { EffectName, OverlayName, Palette, ScrollInput } from './visuals.js';
 
@@ -192,7 +193,7 @@ export type LayoutAppPayload = PayloadTiming & {
 /** A pushed-app page: either the classic keys, or a `layout`. */
 export type AppPayload = ClassicAppPayload | LayoutAppPayload;
 
-/** The 7 keys only notifications accept. */
+/** The 5 keys only notifications accept. */
 export interface NotificationOptions {
   /** Identifier for targeted dismissal. `active` cannot be addressed. */
   name?: string;
@@ -202,12 +203,12 @@ export interface NotificationOptions {
   stack?: boolean;
   /** Render even while the matrix is switched off. Default `false`. */
   wakeup?: boolean;
-  /** A stored MP3, else a melody, else a DFPlayer track number. */
-  sound?: string | number;
-  /** An inline RTTTL melody; wins over {@link sound}. */
-  soundRtttl?: string;
-  /** Re-trigger the sound while the notification is shown. Default `false`. */
-  soundLoop?: boolean;
+  /**
+   * A sound to play when the notification appears, as an alert: a stored name, a sound object
+   * or a list of 1-4 alternatives (no `station`). `loop: true` repeats it while the notification
+   * is shown. `""` or `null` plays nothing. A name that is not stored is not an error.
+   */
+  sound?: NotificationSound;
 }
 
 /** Everything `POST /api/v1/notifications` accepts. */

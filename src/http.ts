@@ -58,8 +58,8 @@ export interface TransportRequest {
   query?: Record<string, string | number | boolean | undefined>;
   /** Serialized as JSON with `Content-Type: application/json`. */
   json?: unknown;
-  /** A raw body (string or FormData) sent as is. */
-  body?: string | FormData;
+  /** A raw body (text, FormData or bytes) sent as is. */
+  body?: string | FormData | Uint8Array;
   contentType?: string;
   response?: ResponseKind;
   /** Statuses (besides 2xx) that should not throw. */
@@ -172,7 +172,12 @@ export class HttpTransport {
       data = JSON.stringify(req.json);
       headers['Content-Type'] = 'application/json';
     } else if (req.body !== undefined) {
-      data = req.body;
+      // axios sends `view.buffer` for typed arrays - for a Node.js Buffer that is the whole
+      // shared pool - so bytes go out as an ArrayBuffer of exactly their size.
+      data =
+        req.body instanceof Uint8Array
+          ? req.body.buffer.slice(req.body.byteOffset, req.body.byteOffset + req.body.byteLength)
+          : req.body;
       if (req.contentType) headers['Content-Type'] = req.contentType;
       // FormData: axios sets multipart/form-data including the boundary itself.
       else delete headers['Content-Type'];

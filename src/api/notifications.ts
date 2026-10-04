@@ -2,7 +2,7 @@ import type { RequestOptions } from '../http.js';
 import { AwtrixValidationError } from '../errors.js';
 import type { OkResponse } from '../types/common.js';
 import type { NotificationPayload } from '../types/payload.js';
-import { assertNonEmptyString, segment } from '../validation.js';
+import { assertNonEmptyString, assertSound, segment } from '../validation.js';
 import { ApiModule } from './base.js';
 
 /** One-shot messages that interrupt the rotation. */
@@ -17,6 +17,10 @@ export class NotificationsApi extends ApiModule {
     }
     if (notification.name === 'active') {
       throw new AwtrixValidationError('name', '"active" is reserved and could never be dismissed by name');
+    }
+    const sound = (notification as { sound?: unknown }).sound;
+    if (sound !== undefined && sound !== null && sound !== '') {
+      assertSound(sound, 'sound', { station: false, nextBar: false });
     }
     return this.ok({ method: 'POST', path: '/api/v1/notifications', json: notification, options });
   }

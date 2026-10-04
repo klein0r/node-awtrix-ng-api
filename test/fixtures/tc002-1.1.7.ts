@@ -1,30 +1,32 @@
 /**
- * Real responses of an Ulanzi TC002 running AWTRIX NG 1.1.5, recorded 2026-09-30
+ * Real responses of an Ulanzi TC002 running AWTRIX NG 1.1.7, recorded 2026-10-04
  * (network names and addresses replaced). `satisfies` makes the typecheck fail when the
  * types drift from what the device sends, including unknown fields.
+ *
+ * Removed because the beta documentation does not describe them: gamepad.remote, capabilities.gamepadRemote.
  */
-import type { AppInfo, AudioState, Capabilities, DeviceState, DisplayState, GamepadState, MelodyList, Mp3List, Settings, SystemConfig, VoiceState } from '../../src/index.js';
+import type { AppInfo, AudioState, BuiltinAppConfig, Capabilities, DeviceState, DisplayState, GamepadState, MelodyList, Mp3List, MqttTlsState, Settings, SystemConfig, VoiceState } from '../../src/index.js';
 
 export const device = {
-  "version": "1.1.5",
+  "version": "1.1.7",
   "uid": "ccc4b277a755",
   "boardType": "tc002",
   "soc": "armv7l",
   "updateImage": "awtrix-ng-tc002.awup",
   "ipAddress": "192.168.1.50",
   "hostname": "awtrixng-77a755",
-  "wifiRssi": -33,
-  "uptimeSeconds": 212,
-  "freeHeapBytes": 14696448,
-  "minFreeHeapBytes": 14495744,
+  "wifiRssi": -38,
+  "uptimeSeconds": 1537,
+  "freeHeapBytes": 13807616,
+  "minFreeHeapBytes": 13783040,
   "scriptingRunning": true,
   "scriptHeapPool": "system",
   "scriptHeapBudgetBytes": 4194304,
   "resetReason": "poweron",
   "fps": 42,
   "brightness": 141,
-  "batteryPercent": 91,
-  "batteryVoltage": 4.14,
+  "batteryPercent": 0,
+  "batteryVoltage": 3.59,
   "lowBattery": false,
   "matrixPower": true,
   "currentApp": "Status",
@@ -79,7 +81,7 @@ export const device = {
   },
   "update": {
     "state": "confirmed",
-    "release": "1.1.5-g6e19de7d216f-b88414ca7daa",
+    "release": "1.1.7-gb973334d4347-5ec2569adee9",
     "error": ""
   }
 } satisfies DeviceState;
@@ -98,6 +100,7 @@ export const settings = {
   "calendarHeaderColor": "#FF0000",
   "calendarTextColor": "#000000",
   "calendarBodyColor": "#FFFFFF",
+  "calendarAnimation": true,
   "time24h": true,
   "timeLeadingZero": true,
   "timeShowSeconds": false,
@@ -110,18 +113,18 @@ export const settings = {
   "dateMonthNames": false,
   "useCelsius": true,
   "blockNavigation": false,
-  "soundEnabled": true,
+  "bootSound": true,
   "uppercase": true,
   "timeColor": null,
   "dateColor": null,
   "humidityColor": null,
   "temperatureColor": null,
   "batteryColor": null,
-  "buzzerVolume": 80,
-  "dfplayerVolume": 80,
-  "mp3Volume": 90,
+  "volume": 90,
   "radioVolume": 71,
-  "audioAnalysisSource": "auto",
+  "appVolume": 100,
+  "alertVolume": 100,
+  "musicSource": "auto",
   "saturation": 100,
   "gamma": 1.899999976,
   "colorCorrection": null,
@@ -136,6 +139,18 @@ export const settings = {
     "holdMs": 1000
   },
   "weekdayBar": {
+    "show": true,
+    "startOnMonday": true,
+    "weekendDays": [
+      "sunday",
+      "saturday"
+    ],
+    "activeColor": "#FFFFFF",
+    "inactiveColor": "#666666",
+    "weekendActiveColor": "#FFFFFF",
+    "weekendInactiveColor": "#666666"
+  },
+  "dateWeekdayBar": {
     "show": true,
     "startOnMonday": true,
     "weekendDays": [
@@ -168,10 +183,11 @@ export const apps = [
     "inLoop": true,
     "slot": 0,
     "present": true,
-    "origin": "builtin"
+    "origin": "builtin",
+    "config": false
   },
   {
-    "name": "mynumber",
+    "name": "mygraph",
     "enabled": true,
     "inLoop": false,
     "slot": 1,
@@ -179,7 +195,7 @@ export const apps = [
     "origin": null
   },
   {
-    "name": "mygraph",
+    "name": "mynumber",
     "enabled": true,
     "inLoop": false,
     "slot": 2,
@@ -192,7 +208,8 @@ export const apps = [
     "inLoop": false,
     "slot": null,
     "present": true,
-    "origin": "builtin"
+    "origin": "builtin",
+    "config": true
   }
 ] satisfies AppInfo[];
 
@@ -279,15 +296,17 @@ export const capabilities = {
     "Rainbow"
   ],
   "audio": {
-    "buzzer": true,
-    "track": false,
     "mp3": true,
+    "rtttl": true,
+    "song": true,
+    "speech": true,
+    "track": false,
     "radio": true,
-    "mixer": true,
-    "synth": true,
-    "pitch": true,
-    "scriptSounds": true
+    "url": true,
+    "effect": true,
+    "clip": true
   },
+  "microphone": true,
   "scriptUpdates": true,
   "gpio": null,
   "platform": {
@@ -298,10 +317,8 @@ export const capabilities = {
   },
   "ble": true,
   "gamepad": true,
+  "oauth": true,
   "voice": true,
-  "audioInputs": {
-    "microphone": true
-  },
   "clockFaces": [
     "sheet",
     "ring",
@@ -409,7 +426,9 @@ export const capabilities = {
       "scriptHandles": 8,
       "scriptHandlesPerScript": 4
     }
-  }
+  },
+  "mqttTls": true,
+  "bootSound": true
 } satisfies Capabilities;
 
 export const system = {
@@ -459,16 +478,12 @@ export const system = {
   "statsInterval": 10000,
   "tempDecimals": 0,
   "debugMode": false,
-  "scriptingEnabled": true
+  "scriptingEnabled": true,
+  "mqttTls": false,
+  "mqttTlsPin": ""
 } satisfies SystemConfig;
 
 export const audio = {
-  "available": true,
-  "mp3": {
-    "playing": false,
-    "name": "",
-    "script": ""
-  },
   "radio": {
     "playing": false,
     "station": "",
@@ -479,31 +494,68 @@ export const audio = {
     "starvedMs": 0,
     "bufferBytes": 0
   },
+  "app": {
+    "playing": false,
+    "name": "",
+    "error": ""
+  },
+  "alert": {
+    "playing": false,
+    "name": "",
+    "error": ""
+  },
   "stations": [
     {
-      "name": "WDR",
+      "name": "WDRa",
       "url": "https://wdr-1live-chillout.icecast.wdr.de/wdr/1live/chillout/mp3/128/stream.mp3"
     }
   ]
 } satisfies AudioState;
 
 export const mp3 = {
-  "files": [],
+  "files": [
+    {
+      "name": "awtrixNG.mp3",
+      "size": 123154
+    }
+  ],
   "scripts": [],
-  "usedBytes": 2381,
-  "totalBytes": 6912333
+  "usedBytes": 125560,
+  "totalBytes": 6920824
 } satisfies Mp3List;
 
 export const melodies = {
-  "melodies": [],
-  "usedBytes": 2381,
-  "totalBytes": 6912333
+  "melodies": [
+    {
+      "name": "hihi",
+      "rtttl": "hihi:d=4,o=5,b=120:c,e,g",
+      "bytes": 24,
+      "notes": 3,
+      "durationMs": 1488,
+      "valid": true
+    }
+  ],
+  "usedBytes": 125560,
+  "totalBytes": 6920824
 } satisfies MelodyList;
 
 export const gamepad = {
-  "state": "unpaired",
-  "name": "",
-  "address": ""
+  "devices": [
+    {
+      "id": 1,
+      "state": "unpaired",
+      "name": "",
+      "address": "",
+      "player": null
+    },
+    {
+      "id": 2,
+      "state": "unpaired",
+      "name": "",
+      "address": "",
+      "player": null
+    }
+  ]
 } satisfies GamepadState;
 
 export const voice = {
@@ -511,9 +563,284 @@ export const voice = {
     "enabled": false,
     "url": "",
     "pipeline": "",
+    "device": "",
     "tokenSet": false
   },
   "state": "offline",
   "error": "",
   "pipelines": []
 } satisfies VoiceState;
+
+export const mqttTls = {
+  "ca": "public",
+  "pending": null
+} satisfies MqttTlsState;
+
+export const timeConfig = {
+  "name": "Time",
+  "fields": [
+    {
+      "key": "clockFace",
+      "type": "select",
+      "options": [
+        "sheet",
+        "ring",
+        "flap",
+        "month",
+        "big"
+      ],
+      "group": "time",
+      "path": [
+        "clockFace"
+      ],
+      "default": "sheet",
+      "value": "sheet"
+    },
+    {
+      "key": "time24h",
+      "type": "bool",
+      "group": "time",
+      "path": [
+        "time24h"
+      ],
+      "default": true,
+      "value": true
+    },
+    {
+      "key": "timeLeadingZero",
+      "type": "bool",
+      "group": "time",
+      "path": [
+        "timeLeadingZero"
+      ],
+      "default": true,
+      "value": true
+    },
+    {
+      "key": "timeShowSeconds",
+      "type": "bool",
+      "group": "time",
+      "path": [
+        "timeShowSeconds"
+      ],
+      "default": false,
+      "value": false
+    },
+    {
+      "key": "timeSeparatorMode",
+      "type": "select",
+      "options": [
+        "steady",
+        "blink",
+        "pulse"
+      ],
+      "group": "time",
+      "path": [
+        "timeSeparatorMode"
+      ],
+      "default": "pulse",
+      "value": "pulse"
+    },
+    {
+      "key": "timeColor",
+      "type": "color",
+      "nullable": true,
+      "group": "time",
+      "path": [
+        "timeColor"
+      ],
+      "default": null,
+      "value": null
+    },
+    {
+      "key": "calendarHeaderColor",
+      "type": "color",
+      "group": "calendar",
+      "path": [
+        "calendarHeaderColor"
+      ],
+      "default": 16711680,
+      "value": 16711680
+    },
+    {
+      "key": "calendarTextColor",
+      "type": "color",
+      "group": "calendar",
+      "path": [
+        "calendarTextColor"
+      ],
+      "default": 0,
+      "value": 0
+    },
+    {
+      "key": "calendarBodyColor",
+      "type": "color",
+      "group": "calendar",
+      "path": [
+        "calendarBodyColor"
+      ],
+      "default": 16777215,
+      "value": 16777215
+    },
+    {
+      "key": "calendarAnimation",
+      "type": "bool",
+      "group": "calendar",
+      "path": [
+        "calendarAnimation"
+      ],
+      "default": true,
+      "value": true
+    },
+    {
+      "key": "dateOrder",
+      "type": "select",
+      "options": [
+        "dayMonthYear",
+        "monthDayYear",
+        "yearMonthDay"
+      ],
+      "group": "calendar",
+      "path": [
+        "dateOrder"
+      ],
+      "default": "dayMonthYear",
+      "value": "dayMonthYear"
+    },
+    {
+      "key": "dateSeparator",
+      "type": "select",
+      "options": [
+        "dot",
+        "slash",
+        "dash"
+      ],
+      "group": "calendar",
+      "path": [
+        "dateSeparator"
+      ],
+      "default": "dot",
+      "value": "dot"
+    },
+    {
+      "key": "dateYearMode",
+      "type": "select",
+      "options": [
+        "none",
+        "twoDigit",
+        "fourDigit"
+      ],
+      "group": "calendar",
+      "path": [
+        "dateYearMode"
+      ],
+      "default": "twoDigit",
+      "value": "twoDigit"
+    },
+    {
+      "key": "dateMonthNames",
+      "type": "bool",
+      "group": "calendar",
+      "path": [
+        "dateMonthNames"
+      ],
+      "default": false,
+      "value": false
+    },
+    {
+      "key": "dateColor",
+      "type": "color",
+      "nullable": true,
+      "group": "calendar",
+      "path": [
+        "dateColor"
+      ],
+      "default": null,
+      "value": null
+    },
+    {
+      "key": "weekdayBar.show",
+      "type": "bool",
+      "group": "weekday",
+      "path": [
+        "weekdayBar",
+        "show"
+      ],
+      "default": true,
+      "value": true
+    },
+    {
+      "key": "weekdayBar.startOnMonday",
+      "type": "bool",
+      "group": "weekday",
+      "path": [
+        "weekdayBar",
+        "startOnMonday"
+      ],
+      "default": true,
+      "value": true
+    },
+    {
+      "key": "weekdayBar.weekendDays",
+      "type": "days",
+      "group": "weekday",
+      "path": [
+        "weekdayBar",
+        "weekendDays"
+      ],
+      "default": [
+        "sunday",
+        "saturday"
+      ],
+      "value": [
+        "sunday",
+        "saturday"
+      ]
+    },
+    {
+      "key": "weekdayBar.activeColor",
+      "type": "color",
+      "group": "weekday",
+      "path": [
+        "weekdayBar",
+        "activeColor"
+      ],
+      "default": 16777215,
+      "value": 16777215
+    },
+    {
+      "key": "weekdayBar.inactiveColor",
+      "type": "color",
+      "group": "weekday",
+      "path": [
+        "weekdayBar",
+        "inactiveColor"
+      ],
+      "default": 6710886,
+      "value": 6710886
+    },
+    {
+      "key": "weekdayBar.weekendActiveColor",
+      "type": "color",
+      "group": "weekday",
+      "path": [
+        "weekdayBar",
+        "weekendActiveColor"
+      ],
+      "default": 16777215,
+      "value": 16777215
+    },
+    {
+      "key": "weekdayBar.weekendInactiveColor",
+      "type": "color",
+      "group": "weekday",
+      "path": [
+        "weekdayBar",
+        "weekendInactiveColor"
+      ],
+      "default": 6710886,
+      "value": 6710886
+    }
+  ],
+  "warnings": []
+} satisfies BuiltinAppConfig;
