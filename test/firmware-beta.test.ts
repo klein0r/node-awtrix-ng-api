@@ -5,10 +5,9 @@ import {
   AwtrixValidationError,
   Draw,
   type AppPayload,
-  type AudioPlayRequest,
   type Capabilities,
   type NativeRegion,
-  type Settings,
+  type SettingsUpdate,
 } from '../src/index.js';
 import { MockAwtrix } from './mockServer.js';
 
@@ -50,45 +49,6 @@ describe('layouts', () => {
   });
 });
 
-describe('audio', () => {
-  it('plays mixer and synthesizer sources with their modifiers', async () => {
-    await client.audio.playSfx('boost', { script: 'Racer' });
-    expectRequest('POST', '/api/v1/audio/play', { sfx: 'boost', script: 'Racer' });
-    await client.audio.playLoop('engine');
-    expectRequest('POST', '/api/v1/audio/play', { loop: 'engine' });
-    await client.audio.playSong('bpm 96; lead: c4:4 e g', { nextBar: true });
-    expectRequest('POST', '/api/v1/audio/play', { song: 'bpm 96; lead: c4:4 e g', nextBar: true });
-    await client.audio.playFx('lead: c5:8');
-    expectRequest('POST', '/api/v1/audio/play', { fx: 'lead: c5:8' });
-    await client.audio.play({ mp3: 'ding', script: 'Racer' });
-    expectRequest('POST', '/api/v1/audio/play', { mp3: 'ding', script: 'Racer' });
-    await client.audio.stop('loop');
-    expectRequest('POST', '/api/v1/audio/stop', { scope: 'loop' });
-  });
-
-  it('refuses modifiers next to the wrong source', async () => {
-    await expect(client.audio.play({ melody: 'x', script: 'Racer' } as never)).rejects.toThrow(/script/);
-    await expect(client.audio.play({ sfx: 'x', nextBar: true } as never)).rejects.toThrow(/nextBar/);
-    await expect(client.audio.play({ sfx: 'x', script: 'bad name' })).rejects.toBeInstanceOf(AwtrixValidationError);
-    expect(mock.requests).toHaveLength(0);
-  });
-
-  it('falls back to GET /api/v1/audio for stations on older firmware', async () => {
-    mock
-      .reply({ status: 405, body: { error: { code: 'methodNotAllowed', message: 'allowed method(s): PUT' } } })
-      .reply({ body: { available: true, mp3: { playing: false, name: '' }, radio: {}, stations: [{ name: 'SWR3', url: 'x' }] } });
-    expect(await client.audio.getStations()).toEqual([{ name: 'SWR3', url: 'x' }]);
-    expect(mock.requests.map((r) => r.path)).toEqual(['/api/v1/audio/stations', '/api/v1/audio']);
-  });
-
-  it('does not hide other station errors', async () => {
-    mock.reply({ status: 401, body: { error: { code: 'unauthorized', message: 'authentication required' } } });
-    const error = (await client.audio.getStations().catch((e: unknown) => e)) as AwtrixApiError;
-    expect(error.isUnauthorized).toBe(true);
-    expect(mock.requests).toHaveLength(1);
-  });
-});
-
 describe('scripts', () => {
   it('reads and changes saved data', async () => {
     mock.reply({ body: { unl: 7, best: [12, 40, 9] } });
@@ -118,14 +78,33 @@ describe('scripts', () => {
 });
 
 describe('gamepad and voice', () => {
-  it('reads, pairs and forgets the gamepad', async () => {
-    mock.reply({ body: { state: 'ready', name: '8BitDo', address: 'aa:bb' } });
-    expect((await client.gamepad.get()).state).toBe('ready');
+  it('reads both slots, pairs and forgets per slot', async () => {
+    mock.reply({
+      body: {
+        devices: [
+          { id: 1, state: 'ready', name: '8BitDo', address: 'aa:bb', player: 1 },
+          { id: 2, state: 'unpaired', name: '', address: '', player: null },
+        ],
+      },
+    });
+    const { devices } = await client.gamepad.get();
+    expect(devices.map((d) => d.state)).toEqual(['ready', 'unpaired']);
     expectRequest('GET', '/api/v1/gamepad');
-    await client.gamepad.pair();
+
+    mock.reply({ body: { ok: true, id: 2 } });
+    expect(await client.gamepad.pair()).toEqual({ ok: true, id: 2 });
     expectRequest('POST', '/api/v1/gamepad/pair');
-    await client.gamepad.forget();
-    expectRequest('DELETE', '/api/v1/gamepad');
+
+    await client.gamepad.forget(1);
+    expectRequest('DELETE', '/api/v1/gamepad/1');
+    await expect(client.gamepad.forget(3 as never)).rejects.toThrow(/slot/);
+  });
+
+  it('surfaces gamepadsFull', async () => {
+    mock.reply({ status: 409, body: { error: { code: 'gamepadsFull', message: 'no free slot' } } });
+    const error = (await client.gamepad.pair().catch((e: unknown) => e)) as AwtrixApiError;
+    expect(error.code).toBe('gamepadsFull');
+    expect(error.isConflict).toBe(true);
   });
 
   it('reads the voice state', async () => {
@@ -133,11 +112,66 @@ describe('gamepad and voice', () => {
     expect((await client.voice.get()).config.tokenSet).toBe(true);
     expectRequest('GET', '/api/v1/voice');
   });
+});
 
-  it('reports a missing gamepad as 404 on other devices', async () => {
-    mock.reply({ status: 404, body: { error: { code: 'notFound', message: 'unknown route' } } });
-    const error = (await client.gamepad.get().catch((e: unknown) => e)) as AwtrixApiError;
-    expect(error.isNotFound).toBe(true);
+describe('built-in app settings', () => {
+  it('reads and changes them', async () => {
+    mock.reply({
+      body: {
+        name: 'Time',
+        fields: [
+          { key: 'clockFace', type: 'select', options: ['sheet', 'ring'], group: 'time', path: ['clockFace'], default: 'sheet', value: 'sheet' },
+          { key: 'weekdayBar.show', type: 'bool', group: 'weekday', path: ['weekdayBar', 'show'], default: true, value: true },
+        ],
+        warnings: [],
+      },
+    });
+    const config = await client.apps.getBuiltinConfig('Time');
+    expect(config.fields.map((f) => f.path.join('.'))).toEqual(['clockFace', 'weekdayBar.show']);
+    expectRequest('GET', '/api/v1/apps/builtin/Time/config');
+
+    mock.reply({ body: { ok: true, name: 'Time', error: null } });
+    await client.apps.updateBuiltinConfig('Time', { clockFace: 'flap', weekdayBar: { show: false } });
+    expectRequest('PATCH', '/api/v1/apps/builtin/Time/config', { clockFace: 'flap', weekdayBar: { show: false } });
+    await expect(client.apps.updateBuiltinConfig('Time', {})).rejects.toBeInstanceOf(AwtrixValidationError);
+  });
+});
+
+describe('MQTT over TLS', () => {
+  it('reads, uploads and removes the broker CA', async () => {
+    mock.reply({ body: { ca: 'public', pending: null } });
+    expect((await client.system.getMqttTls()).ca).toBe('public');
+    expectRequest('GET', '/api/v1/mqtt/tls');
+
+    const pem = '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----';
+    mock.reply({ body: { ca: 'uploaded', pending: null } });
+    await client.system.setMqttTlsCa(pem);
+    expectRequest('PUT', '/api/v1/mqtt/tls/ca', { certificate: pem });
+
+    mock.reply({ body: { ca: 'public', pending: null } });
+    await client.system.deleteMqttTlsCa();
+    expectRequest('DELETE', '/api/v1/mqtt/tls/ca');
+  });
+});
+
+describe('icons', () => {
+  it('renames an icon', async () => {
+    await client.files.renameIcon('mail.gif', 'letter.gif');
+    expectRequest('POST', '/api/v1/icons/rename', { from: 'mail.gif', to: 'letter.gif' });
+    await expect(client.files.renameIcon('mail.gif', 'letter.jpg')).rejects.toThrow(/extension/);
+
+    mock.reply({ status: 409, body: { error: { code: 'nameTaken', message: 'name taken' } } });
+    const error = (await client.files.renameIcon('mail.gif', 'taken.gif').catch((e: unknown) => e)) as AwtrixApiError;
+    expect(error.code).toBe('nameTaken');
+  });
+});
+
+describe('settings', () => {
+  it('range-checks the volumes', async () => {
+    mock.reply({ body: { volume: 50 } });
+    await client.settings.update({ volume: 50, radioVolume: 40, dateWeekdayBar: { show: false } });
+    expectRequest('PATCH', '/api/v1/settings', { volume: 50, radioVolume: 40, dateWeekdayBar: { show: false } });
+    await expect(client.settings.update({ alertVolume: 101 })).rejects.toThrow(/alertVolume/);
   });
 });
 
@@ -173,19 +207,11 @@ describe('types', () => {
     expect([mixed, twoContents, scrollOnIcon, both]).toHaveLength(4);
   });
 
-  it('allows script and nextBar only next to their sources', () => {
-    const ok: AudioPlayRequest = { loop: 'engine', script: 'Racer' };
-    // @ts-expect-error - script is not allowed with melody
-    const scriptOnMelody: AudioPlayRequest = { melody: 'x', script: 'Racer' };
-    // @ts-expect-error - nextBar is only allowed with song
-    const nextBarOnFx: AudioPlayRequest = { fx: 'x', nextBar: true };
-    expect([ok, scriptOnMelody, nextBarOnFx]).toHaveLength(3);
-  });
-
-  it('describes both firmware generations', () => {
-    const older: Pick<Settings, 'clockFace' | 'radioMeta'> = { radioMeta: true };
-    const newer: Pick<Settings, 'clockFace' | 'radioMeta'> = { clockFace: 'flap' };
+  it('types the 1.1.7 settings and capabilities', () => {
+    // @ts-expect-error - soundEnabled was removed in 1.1.7
+    const removed: SettingsUpdate = { soundEnabled: false };
+    const volumes: SettingsUpdate = { volume: 80, alertVolume: 100, appVolume: 50, radioVolume: 40, musicSource: 'microphone' };
     const tc002Gpio: Capabilities['gpio'] = null;
-    expect([older, newer, tc002Gpio]).toHaveLength(3);
+    expect([removed, volumes, tc002Gpio]).toHaveLength(3);
   });
 });

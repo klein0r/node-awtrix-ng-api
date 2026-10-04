@@ -19,6 +19,8 @@ export type AwtrixErrorCode =
   | 'notFound'
   | 'methodNotAllowed'
   | 'scriptChanged'
+  | 'nameTaken'
+  | 'gamepadsFull'
   | 'notNewer'
   | 'updateBusy'
   | 'payloadTooLarge'

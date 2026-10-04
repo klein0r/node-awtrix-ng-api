@@ -24,7 +24,7 @@ export class SettingsApi extends ApiModule {
     assertOptionalInteger(p, 'brightness', 0, 255);
     assertOptionalInteger(p, 'saturation', 0, 100);
     assertOptionalInteger(p, 'timeMode', 0, 6);
-    for (const key of ['buzzerVolume', 'dfplayerVolume', 'mp3Volume', 'radioVolume']) {
+    for (const key of ['volume', 'alertVolume', 'appVolume', 'radioVolume']) {
       assertOptionalInteger(p, key, 0, 100);
     }
     return this.json({ method: 'PATCH', path: '/api/v1/settings', json: patch, options });

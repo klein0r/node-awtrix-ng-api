@@ -4,6 +4,7 @@ import type { OkResponse } from '../types/common.js';
 import type { FirmwareUpdateResult, RestoreResult, UploadContent } from '../types/files.js';
 import type {
   LogChunk,
+  MqttTlsState,
   SystemConfig,
   SystemConfigUpdate,
   SystemConfigWithSecrets,
@@ -85,6 +86,29 @@ export class SystemApi extends ApiModule {
   async getLogs(after = 0, options?: RequestOptions): Promise<LogChunk> {
     assertInteger(after, 'after', 0, Number.MAX_SAFE_INTEGER);
     return this.json(this.read('/api/v1/logs', options, { after }));
+  }
+
+  /* --- MQTT over TLS (TC002, capabilities.mqttTls) --- */
+
+  /** `GET /api/v1/mqtt/tls` - how the MQTT client trusts its broker. */
+  async getMqttTls(options?: RequestOptions): Promise<MqttTlsState> {
+    return this.json(this.read('/api/v1/mqtt/tls', options));
+  }
+
+  /**
+   * `PUT /api/v1/mqtt/tls/ca` - uploads the CA (PEM, one or more certificates) the broker's
+   * certificate must come from. Replaces public CAs and `mqttTlsPin` from the next connection.
+   */
+  async setMqttTlsCa(certificate: string, options?: RequestOptions): Promise<MqttTlsState> {
+    if (typeof certificate !== 'string' || certificate.length === 0 || certificate.length > 65536) {
+      throw new AwtrixValidationError('certificate', 'must be a PEM string of at most 65536 characters');
+    }
+    return this.json({ method: 'PUT', path: '/api/v1/mqtt/tls/ca', json: { certificate }, options });
+  }
+
+  /** `DELETE /api/v1/mqtt/tls/ca` - back to public CAs and the trusted fingerprint. */
+  async deleteMqttTlsCa(options?: RequestOptions): Promise<MqttTlsState> {
+    return this.json({ method: 'DELETE', path: '/api/v1/mqtt/tls/ca', options });
   }
 
   /**

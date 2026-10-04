@@ -1,138 +1,109 @@
 import type { RequestOptions } from '../http.js';
-import { AwtrixApiError, AwtrixValidationError } from '../errors.js';
-import type {
-  AudioPlayRequest,
-  AudioSources,
-  AudioState,
-  AudioStopScope,
-  MelodyList,
-  MelodySaveResult,
-  Mp3List,
-  RadioStation,
-  ScriptSoundSource,
-} from '../types/audio.js';
+import { AwtrixValidationError } from '../errors.js';
+import type { AudioGroup, AudioPlayRequest, AudioState, MelodyList, MelodySaveResult, Mp3List, RadioStation } from '../types/audio.js';
 import type { OkResponse } from '../types/common.js';
 import type { UploadContent } from '../types/files.js';
-import { assertAppName, assertInteger, assertMelodyName, assertNonEmptyString, normalizeMp3Name, segment } from '../validation.js';
+import { assertMelodyName, assertNonEmptyString, assertSound, normalizeMp3Name, segment } from '../validation.js';
 import { ApiModule, toFormData, UPLOAD_TIMEOUT } from './base.js';
 
-const SOURCE_KEYS: readonly (keyof AudioSources)[] = [
-  'sound',
-  'mp3',
-  'melody',
-  'track',
-  'rtttl',
-  'sfx',
-  'loop',
-  'song',
-  'fx',
-  'station',
-  'index',
-  'url',
-];
-const SCRIPT_SOUND_SOURCES: readonly string[] = ['mp3', 'sfx', 'loop'] satisfies readonly ScriptSoundSource[];
-const STOP_SCOPES: readonly AudioStopScope[] = ['sounds', 'stream', 'loop', 'all'];
+const AUDIO_GROUPS: readonly AudioGroup[] = ['alert', 'app', 'radio'];
 const MAX_STATIONS = 32;
+const MAX_CLIP_BYTES = 2 * 1024 * 1024;
 
-/** Buzzer melodies, stored MP3s, DFPlayer tracks and internet radio. */
+/** Options of the single-source shorthands. */
+export interface PlayOptions extends RequestOptions {
+  /** Repeat until stopped or replaced by a new alert. */
+  loop?: boolean;
+}
+
+/** Melodies, MP3s, speech, songs, DFPlayer tracks, clips and internet radio. */
 export class AudioApi extends ApiModule {
-  /** `GET /api/v1/audio` - what is playing, plus the station list. */
+  /** `GET /api/v1/audio` - the alert, app and radio groups plus the station list. */
   async getState(options?: RequestOptions): Promise<AudioState> {
     return this.json(this.read('/api/v1/audio', options));
   }
 
   /**
-   * `POST /api/v1/audio/play` - plays exactly one source. With `soundEnabled` off every source
-   * except the radio ones answers `200` and plays nothing.
+   * `POST /api/v1/audio/play` - plays a sound: a stored name (short for `{ file: name }`), one
+   * sound object (`file`, `rtttl`, `song`, `speech`, `track` or `station`, plus `loop`), or a
+   * list of 1-4 alternatives of which the device plays the first it can.
    *
-   * `sfx`, `loop`, `song` and `fx` need firmware 1.1.4 and a mixer / synthesizer (TC002);
-   * without one the device answers `503`. `script` (with `mp3`/`sfx`/`loop`) plays a script's
-   * own sound; `nextBar` (with `song`) switches songs at the next bar line.
+   * Everything except `station` plays as an alert at `volume × alertVolume`: it replaces a
+   * playing alert and pauses the radio. `station` plays as the radio. A stored name that does
+   * not exist answers `404`, a sound the device cannot play `503`.
    */
-  async play(request: AudioPlayRequest, options?: RequestOptions): Promise<OkResponse> {
-    if (typeof request !== 'object' || request === null) {
-      throw new AwtrixValidationError('request', 'must be an object');
-    }
-    const input = request as Partial<AudioSources> & { script?: unknown; nextBar?: unknown };
-    const keys = SOURCE_KEYS.filter((key) => input[key] !== undefined);
-    if (keys.length !== 1) {
-      throw new AwtrixValidationError('request', `exactly one of ${SOURCE_KEYS.join(', ')} is required`);
-    }
-    const key = keys[0]!;
-    const value = input[key];
-    if (key === 'track') assertInteger(value, 'track', 1, 2999);
-    else if (key === 'index') assertInteger(value, 'index', 0, MAX_STATIONS - 1);
-    else assertNonEmptyString(value, key);
-
-    const json: Record<string, unknown> = { [key]: value };
-    if (input.script !== undefined) {
-      if (!SCRIPT_SOUND_SOURCES.includes(key)) {
-        throw new AwtrixValidationError('script', `is only allowed with ${SCRIPT_SOUND_SOURCES.join(', ')}`);
-      }
-      assertAppName(input.script, 'script');
-      json.script = input.script;
-    }
-    if (input.nextBar !== undefined) {
-      if (key !== 'song') throw new AwtrixValidationError('nextBar', 'is only allowed with song');
-      if (typeof input.nextBar !== 'boolean') throw new AwtrixValidationError('nextBar', 'must be a boolean');
-      json.nextBar = input.nextBar;
-    }
-    return this.ok({ method: 'POST', path: '/api/v1/audio/play', json, options });
-  }
-
-  /** Plays a name resolved against every output: stored MP3, then melody, then DFPlayer track. */
-  async playSound(name: string, options?: RequestOptions): Promise<OkResponse> {
-    return this.play({ sound: name }, options);
-  }
-
-  /** Plays an inline RTTTL melody on the buzzer. */
-  async playRtttl(rtttl: string, options?: RequestOptions): Promise<OkResponse> {
-    return this.play({ rtttl }, options);
-  }
-
-  /** Tunes to a stored station by name. */
-  async playStation(station: string, options?: RequestOptions): Promise<OkResponse> {
-    return this.play({ station }, options);
-  }
-
-  /** Streams a URL without storing it. */
-  async playUrl(url: string, options?: RequestOptions): Promise<OkResponse> {
-    return this.play({ url }, options);
-  }
-
-  /** Plays a stored MP3 as an overlapping sound effect (1.1.4+; like `mp3` without a mixer). */
-  async playSfx(name: string, sfxOptions: { script?: string } & RequestOptions = {}): Promise<OkResponse> {
-    const { script, ...options } = sfxOptions;
-    return this.play(script === undefined ? { sfx: name } : { sfx: name, script }, options);
-  }
-
-  /** Loops a stored MP3 under all other sounds until stopped (1.1.4+, needs a mixer). */
-  async playLoop(name: string, loopOptions: { script?: string } & RequestOptions = {}): Promise<OkResponse> {
-    const { script, ...options } = loopOptions;
-    return this.play(script === undefined ? { loop: name } : { loop: name, script }, options);
-  }
-
-  /** Plays song text on the synthesizer in place of the loop (1.1.4+, TC002). */
-  async playSong(song: string, songOptions: { nextBar?: boolean } & RequestOptions = {}): Promise<OkResponse> {
-    const { nextBar, ...options } = songOptions;
-    return this.play(nextBar === undefined ? { song } : { song, nextBar }, options);
-  }
-
-  /** Plays song text once as a synthesizer effect (1.1.4+, TC002). */
-  async playFx(fx: string, options?: RequestOptions): Promise<OkResponse> {
-    return this.play({ fx }, options);
+  async play(sound: AudioPlayRequest, options?: RequestOptions): Promise<OkResponse> {
+    assertSound(sound, 'sound', { station: true, nextBar: true });
+    return this.ok({ method: 'POST', path: '/api/v1/audio/play', json: sound, options });
   }
 
   /**
-   * `POST /api/v1/audio/stop` - `sounds` stops one-shots, effects and the loop, `stream` the
-   * radio, `loop` only the loop (1.1.4+), `all` (default) everything. Works even while
-   * `soundEnabled` is off.
+   * Plays a stored name (`/MP3/<name>.mp3`, else `/MELODIES/<name>.txt`), a script's own sound
+   * (`"Script/name"`) or an `http(s)://` address (`capabilities.audio.url`).
    */
-  async stop(scope?: AudioStopScope, options?: RequestOptions): Promise<OkResponse> {
-    if (scope !== undefined && !STOP_SCOPES.includes(scope)) {
-      throw new AwtrixValidationError('scope', `must be one of ${STOP_SCOPES.join(', ')}`);
+  async playFile(file: string, playOptions: PlayOptions = {}): Promise<OkResponse> {
+    const { loop, ...options } = playOptions;
+    return this.play(loop === undefined ? { file } : { file, loop }, options);
+  }
+
+  /** Plays an RTTTL melody (at most 512 characters). */
+  async playRtttl(rtttl: string, playOptions: PlayOptions = {}): Promise<OkResponse> {
+    const { loop, ...options } = playOptions;
+    return this.play(loop === undefined ? { rtttl } : { rtttl, loop }, options);
+  }
+
+  /** Plays song text on the synthesizer (`capabilities.audio.song`), once or with `loop`. */
+  async playSong(song: string, playOptions: PlayOptions = {}): Promise<OkResponse> {
+    const { loop, ...options } = playOptions;
+    return this.play(loop === undefined ? { song } : { song, loop }, options);
+  }
+
+  /** Reads text aloud, 1-512 bytes of UTF-8 (`capabilities.audio.speech`). */
+  async speak(speech: string, options?: RequestOptions): Promise<OkResponse> {
+    return this.play({ speech }, options);
+  }
+
+  /** Plays a DFPlayer track `1..2999` (`capabilities.audio.track`). */
+  async playTrack(track: number, playOptions: PlayOptions = {}): Promise<OkResponse> {
+    const { loop, ...options } = playOptions;
+    return this.play(loop === undefined ? { track } : { track, loop }, options);
+  }
+
+  /**
+   * Starts the radio: a station name from the stored list, a position in it (from 0) or a
+   * stream address (`.m3u`/`.pls` play their first entry).
+   */
+  async playStation(station: string | number, options?: RequestOptions): Promise<OkResponse> {
+    return this.play({ station }, options);
+  }
+
+  /**
+   * `POST /api/v1/audio/clip` - plays a recording once without storing it
+   * (`capabilities.audio.clip`, the TC002): WAV with 16-bit PCM (16-48 kHz, mono or stereo) or
+   * MP3, at most 2 MiB. Plays as an alert.
+   */
+  async playClip(clip: UploadContent, contentType?: string, options?: RequestOptions): Promise<OkResponse> {
+    const bytes = await toBytes(clip);
+    if (bytes.byteLength === 0) throw new AwtrixValidationError('clip', 'must not be empty');
+    if (bytes.byteLength > MAX_CLIP_BYTES) throw new AwtrixValidationError('clip', 'must be at most 2 MiB');
+    return this.ok({
+      method: 'POST',
+      path: '/api/v1/audio/clip',
+      body: bytes,
+      contentType: contentType ?? sniffAudioType(bytes),
+      options: { timeout: UPLOAD_TIMEOUT, ...options },
+    });
+  }
+
+  /**
+   * `POST /api/v1/audio/stop` - without a group everything stops, the radio included.
+   * `alert` stops the playing alert, `app` every sound of the scripts, `radio` the radio.
+   */
+  async stop(group?: AudioGroup, options?: RequestOptions): Promise<OkResponse> {
+    if (group !== undefined && !AUDIO_GROUPS.includes(group)) {
+      throw new AwtrixValidationError('group', `must be one of ${AUDIO_GROUPS.join(', ')}`);
     }
-    return this.ok({ method: 'POST', path: '/api/v1/audio/stop', json: scope ? { scope } : undefined, options });
+    return this.ok({ method: 'POST', path: '/api/v1/audio/stop', json: group ? { group } : undefined, options });
   }
 
   /* --- Melodies --- */
@@ -192,21 +163,12 @@ export class AudioApi extends ApiModule {
 
   /* --- Radio --- */
 
-  /**
-   * The stored station list: `GET /api/v1/audio/stations` (1.1.4+), falling back to the list
-   * in `GET /api/v1/audio` on older firmware.
-   */
+  /** `GET /api/v1/audio/stations` - the stored station list. */
   async getStations(options?: RequestOptions): Promise<RadioStation[]> {
-    try {
-      const body = await this.json<{ stations: RadioStation[] }>(this.read('/api/v1/audio/stations', options));
-      return body.stations;
-    } catch (error) {
-      if (error instanceof AwtrixApiError && (error.status === 404 || error.status === 405)) {
-        return (await this.getState(options)).stations;
-      }
-      throw error;
-    }
+    const body = await this.json<{ stations: RadioStation[] }>(this.read('/api/v1/audio/stations', options));
+    return body.stations;
   }
+
 
   /**
    * `PUT /api/v1/audio/stations` - replaces the whole list: at most 32 stations, unique names
@@ -237,4 +199,17 @@ export class AudioApi extends ApiModule {
       options,
     });
   }
+}
+
+async function toBytes(content: UploadContent): Promise<Uint8Array> {
+  if (typeof Blob !== 'undefined' && content instanceof Blob) return new Uint8Array(await content.arrayBuffer());
+  if (content instanceof ArrayBuffer) return new Uint8Array(content);
+  if (ArrayBuffer.isView(content)) return new Uint8Array(content.buffer, content.byteOffset, content.byteLength);
+  throw new AwtrixValidationError('clip', 'must be a Blob, Buffer, Uint8Array or ArrayBuffer');
+}
+
+/** `audio/wav` for a RIFF header, otherwise `audio/mpeg`. The device accepts any type. */
+function sniffAudioType(bytes: Uint8Array): string {
+  const riff = bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46;
+  return riff ? 'audio/wav' : 'audio/mpeg';
 }

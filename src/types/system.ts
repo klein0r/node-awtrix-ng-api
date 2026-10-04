@@ -41,6 +41,10 @@ export interface SystemConfig {
   mqttUser: string;
   /** Empty falls back to the device uid. */
   mqttPrefix: string;
+  /** TC002 only: connect over TLS. Applies after a restart. */
+  mqttTls?: boolean;
+  /** TC002 only: SHA-256 of the trusted broker certificate (64 lowercase hex chars), `""` trusts none. */
+  mqttTlsPin?: string;
   haDiscovery: boolean;
   haPrefix: string;
 
@@ -84,8 +88,6 @@ export interface SystemConfig {
   /* --- Panel (absent on fixed hardware such as the TC002) --- */
   /** `1..128`; `panelWidth * panels` must be `32..128`. */
   panelWidth?: number;
-  /** Since 1.1.4. `8..32`, default `8`; total pixels at most 1024 (4096 with PSRAM). */
-  panelHeight?: number;
   /** `1..128`. */
   panels?: number;
   panelStart?: PanelStart;
@@ -175,23 +177,26 @@ export interface LogChunk {
 /* Capabilities                                                                               */
 /* ------------------------------------------------------------------------------------------ */
 
+/** What the panel can play. Every flag is always present. */
 export interface AudioCapabilities {
-  /** Melodies and inline RTTTL can be played. */
-  buzzer: boolean;
-  /** DFPlayer tracks can be played. */
-  track: boolean;
-  /** Stored MP3s can be played. */
+  /** Stored MP3s play (TC002; ESP32-S3 with PSRAM and I2S). */
   mp3: boolean;
-  /** Internet radio can be streamed. */
+  /** Melodies play (a buzzer pin is set, or the TC002 speaker). */
+  rtttl: boolean;
+  /** The synthesizer plays song text (TC002). */
+  song: boolean;
+  /** The clock reads text aloud (TC002 with a voice). */
+  speech: boolean;
+  /** A DFPlayer is wired and switched on. */
+  track: boolean;
+  /** Internet radio plays. */
   radio: boolean;
-  /** Since 1.1.4: `sfx` and `loop` layer sounds (TC002). */
-  mixer?: boolean;
-  /** Since 1.1.4: a synthesizer plays song text via `song` and `fx` (TC002). */
-  synth?: boolean;
-  /** Since 1.1.4: scripts can hear the pitch of a note at the microphone (TC002). */
-  pitch?: boolean;
-  /** Since 1.1.4: scripts keep their own MP3s in `/SCRIPTS/<name>/`. */
-  scriptSounds?: boolean;
+  /** `file` takes an `http(s)://` address (TC002). */
+  url: boolean;
+  /** A script's effects and background music play over each other (TC002). */
+  effect: boolean;
+  /** `audio.playClip()` plays a WAV or MP3 once (TC002). */
+  clip: boolean;
 }
 
 export interface SensorCapabilities {
@@ -291,8 +296,18 @@ export interface Capabilities {
   voice?: true;
   /** Since 1.1.4. */
   display?: DisplayCapabilities;
-  /** Since 1.1.5: audio inputs, e.g. `{ microphone: true }` on the TC002. */
-  audioInputs?: { microphone?: boolean; [input: string]: boolean | undefined };
+  /** Scripts and music visualizations can hear the microphone (TC002). */
+  microphone?: boolean;
+  /** Present (and `true`) only where the clock plays a sound at power-on (TC002). */
+  bootSound?: true;
+  /** Present (and `true`) only where MQTT can connect over TLS (TC002); `/api/v1/mqtt/tls` exists. */
+  mqttTls?: true;
+  /** Present (and `true`) only where scripts can import `crypto` (TC002 with scripting on). */
+  crypto?: true;
+  /** Present (and `true`) only where scripts can import `oauth` (TC002 with scripting on). */
+  oauth?: true;
+  /** Present (and `true`) only where scripts can import `tcp` (TC002 with scripting on). */
+  tcp?: true;
   /** Since 1.1.4: fonts usable in payloads and layouts. */
   fonts?: FontInfo[];
   /** Since 1.1.4: limits of region layouts. */
@@ -305,13 +320,46 @@ export interface Capabilities {
 
 export type GamepadConnectionState = 'unpaired' | 'pairing' | 'waiting' | 'connecting' | 'ready';
 
-/** `GET /api/v1/gamepad`. */
-export interface GamepadState {
+/** One of the two gamepad slots. */
+export interface GamepadDevice {
+  /** The slot - not the player number. */
+  id: GamepadSlot;
+  /** `unpaired` is an empty slot, `pairing` looks for a gamepad, `waiting` is paired but not connected. */
   state: LooseString<GamepadConnectionState>;
-  /** Bluetooth name; `""` when none is paired. */
+  /** Bluetooth name; `""` for an empty slot. */
   name: string;
-  /** Bluetooth address; `""` when none is paired. */
+  /** Bluetooth address; `""` for an empty slot. */
   address: string;
+  /** The player while ready; `null` otherwise. */
+  player: 1 | 2 | null;
+}
+
+export type GamepadSlot = 1 | 2;
+
+/** `GET /api/v1/gamepad` - always both slots, empty ones included. */
+export interface GamepadState {
+  devices: GamepadDevice[];
+}
+
+/** `POST /api/v1/gamepad/pair` - the slot the search runs for. */
+export interface GamepadPairResult {
+  ok: true;
+  id: GamepadSlot;
+}
+
+/* ------------------------------------------------------------------------------------------ */
+/* MQTT over TLS (TC002)                                                                      */
+/* ------------------------------------------------------------------------------------------ */
+
+/** How the MQTT client trusts its broker over TLS. */
+export interface MqttTlsState {
+  /**
+   * `public` - public certificate authorities and `mqttTlsPin` count; `uploaded` - only the
+   * uploaded CA; `unusable` - the uploaded CA cannot be read, no broker is accepted.
+   */
+  ca: LooseString<'public' | 'uploaded' | 'unusable'>;
+  /** SHA-256 of a refused broker certificate that can be trusted with `mqttTlsPin`. */
+  pending: string | null;
 }
 
 export type VoiceConnectionState = 'offline' | 'connecting' | 'ready' | 'starting' | 'listening' | 'processing' | 'speaking' | 'error';
@@ -324,6 +372,8 @@ export interface VoiceState {
     url: string;
     /** Assist pipeline ID; `""` for the default. */
     pipeline: string;
+    /** Home Assistant device ID whose area is the room for requests; `""` when none is set. */
+    device: string;
     /** Whether a token is stored. The token itself is never returned. */
     tokenSet: boolean;
   };

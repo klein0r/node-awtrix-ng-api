@@ -61,13 +61,24 @@ describe('isValidAppName', () => {
  * Compile-time checks: `npm run typecheck` fails if any of these stop holding.
  */
 describe('type safety', () => {
-  it('enforces exactly one audio source', () => {
-    const ok: AudioPlayRequest = { station: 'SWR3' };
+  it('enforces the sound object rules', () => {
+    const name: AudioPlayRequest = 'ding';
+    const station: AudioPlayRequest = { station: 0 };
+    const list: AudioPlayRequest = [{ speech: 'Hi' }, 'ding'];
+    const looping: AudioPlayRequest = { song: 'lead: c4', loop: true, nextBar: true };
     // @ts-expect-error - two sources at once
-    const twoSources: AudioPlayRequest = { station: 'SWR3', url: 'http://x' };
+    const twoSources: AudioPlayRequest = { file: 'a', rtttl: 'b' };
     // @ts-expect-error - no source at all
     const none: AudioPlayRequest = {};
-    expect([ok, twoSources, none]).toHaveLength(3);
+    // @ts-expect-error - loop is not allowed with station
+    const loopStation: AudioPlayRequest = { station: 'WDR', loop: true };
+    // @ts-expect-error - nextBar needs a looping song
+    const nextBar: AudioPlayRequest = { song: 'x', nextBar: true };
+    // @ts-expect-error - station is not allowed in a list
+    const stationInList: AudioPlayRequest = [{ station: 'WDR' }];
+    // @ts-expect-error - at most 4 entries
+    const tooMany: AudioPlayRequest = ['a', 'b', 'c', 'd', 'e'];
+    expect([name, station, list, looping, twoSources, none, loopStation, nextBar, stationInList, tooMany]).toHaveLength(10);
   });
 
   it('requires at least one field for mood light and indicators', () => {
@@ -88,7 +99,7 @@ describe('type safety', () => {
       effect: 'Matrix',
       scroll: 'bounce',
       hold: true,
-      sound: 5,
+      sound: { rtttl: 'bell:d=4,o=5,b=120:c,e,g', loop: true },
     };
     // @ts-expect-error - unknown payload key
     const typo: NotificationPayload = { txt: 'Hi' };

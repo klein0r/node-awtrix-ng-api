@@ -1,6 +1,6 @@
 import type { RequestOptions } from '../http.js';
 import { AwtrixValidationError } from '../errors.js';
-import type { AppInfo, AppOrder } from '../types/apps.js';
+import type { AppInfo, AppOrder, BuiltinAppConfig, BuiltinAppConfigUpdate, BuiltinConfigWriteResult } from '../types/apps.js';
 import type { AppName, OkResponse } from '../types/common.js';
 import type { AppPayload } from '../types/payload.js';
 import { assertAppName, assertNonEmptyObject, segment } from '../validation.js';
@@ -82,11 +82,37 @@ export class AppsApi extends ApiModule {
   }
 
   /**
+   * `GET /api/v1/apps/builtin/{name}/config` - the settings a built-in app (Time, Date, ...)
+   * offers on this device. `404` when the device has no such built-in app.
+   */
+  async getBuiltinConfig(name: string, options?: RequestOptions): Promise<BuiltinAppConfig> {
+    assertBuiltinName(name);
+    return this.json(this.read(`/api/v1/apps/builtin/${segment(name)}/config`, options));
+  }
+
+  /**
+   * `PATCH /api/v1/apps/builtin/{name}/config` - changes settings of a built-in app, each at its
+   * field's `path` (`['weekdayBar', 'show']` is sent as `{ weekdayBar: { show } }`).
+   * All-or-nothing; a setting the app does not offer answers `422`.
+   */
+  async updateBuiltinConfig(name: string, values: BuiltinAppConfigUpdate, options?: RequestOptions): Promise<BuiltinConfigWriteResult> {
+    assertBuiltinName(name);
+    assertNonEmptyObject(values, 'values');
+    return this.json({ method: 'PATCH', path: `/api/v1/apps/builtin/${segment(name)}/config`, json: values, options });
+  }
+
+  /**
    * `DELETE /api/v1/apps/{name}` - removes whatever app carries the name (pushed incl. its
    * indexed children, or a script together with its store). Succeeds for unknown names.
    */
   async delete(name: AppName, options?: RequestOptions): Promise<OkResponse> {
     assertAppName(name);
     return this.ok({ method: 'DELETE', path: `/api/v1/apps/${segment(name)}`, options });
+  }
+}
+
+function assertBuiltinName(name: unknown): asserts name is string {
+  if (typeof name !== 'string' || !/^[A-Za-z0-9_-]{1,32}$/.test(name)) {
+    throw new AwtrixValidationError('name', 'must match [A-Za-z0-9_-]{1,32}');
   }
 }

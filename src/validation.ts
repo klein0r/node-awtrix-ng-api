@@ -70,3 +70,99 @@ export function assertOptionalInteger(obj: Record<string, unknown>, key: string,
 export function segment(value: string | number): string {
   return encodeURIComponent(String(value));
 }
+
+const SOUND_SOURCE_KEYS = ['file', 'rtttl', 'song', 'speech', 'track', 'station'] as const;
+const SOUND_NAME = /^[A-Za-z0-9_-]{1,32}$/;
+const SCRIPT_SOUND = /^[A-Za-z0-9_-]{1,32}\/[A-Za-z0-9_-]{1,32}$/;
+const SOUND_URL = /^https?:\/\/\S+$/i;
+
+export interface SoundCheckOptions {
+  /** `station` is allowed (only at the top level of `audio.play()`). */
+  station: boolean;
+  /** `nextBar` is allowed (not in notifications). */
+  nextBar: boolean;
+}
+
+/** Checks a `file` value: a stored name, `Script/name` or an `http(s)://` address. */
+export function assertSoundFile(value: unknown, field: string): void {
+  if (typeof value !== 'string' || !(SOUND_NAME.test(value) || SCRIPT_SOUND.test(value) || SOUND_URL.test(value))) {
+    throw new AwtrixValidationError(field, 'must be a name ([A-Za-z0-9_-]{1,32}), "Script/name" or an http(s):// address');
+  }
+}
+
+/**
+ * Checks a sound as `POST /api/v1/audio/play` and a notification's `sound` take it: a stored
+ * name, one sound object, or a list of 1-4 of them. Field names follow the device
+ * (`[1].rtttl`).
+ */
+export function assertSound(sound: unknown, field: string, options: SoundCheckOptions): void {
+  if (typeof sound === 'string') {
+    assertSoundFile(sound, field);
+    return;
+  }
+  if (Array.isArray(sound)) {
+    if (sound.length < 1 || sound.length > 4) throw new AwtrixValidationError(field, 'must have 1 to 4 entries');
+    sound.forEach((entry, i) => {
+      const entryField = `${field}[${i}]`;
+      if (typeof entry === 'string') assertSoundFile(entry, entryField);
+      else assertSoundObject(entry, entryField, { ...options, station: false });
+    });
+    return;
+  }
+  assertSoundObject(sound, field, options);
+}
+
+function assertSoundObject(sound: unknown, field: string, options: SoundCheckOptions): void {
+  if (typeof sound !== 'object' || sound === null || Array.isArray(sound)) {
+    throw new AwtrixValidationError(field, 'must be a string, object or list');
+  }
+  const obj = sound as Record<string, unknown>;
+  const allowed: string[] = [...SOUND_SOURCE_KEYS, 'loop', ...(options.nextBar ? ['nextBar'] : [])];
+  for (const key of Object.keys(obj)) {
+    if (!allowed.includes(key)) throw new AwtrixValidationError(sub(field, key), 'unknown field');
+  }
+  const sources = SOUND_SOURCE_KEYS.filter((key) => obj[key] !== undefined);
+  if (sources.length === 0) throw new AwtrixValidationError(field, `needs a sound key (${SOUND_SOURCE_KEYS.join(', ')})`);
+  if (sources.length > 1) throw new AwtrixValidationError(sub(field, sources[0]!), 'one sound key only');
+  const key = sources[0]!;
+  const value = obj[key];
+  switch (key) {
+    case 'file':
+      assertSoundFile(value, sub(field, key));
+      break;
+    case 'rtttl':
+      if (typeof value !== 'string' || value.length === 0 || value.length > 512) {
+        throw new AwtrixValidationError(sub(field, key), 'must be a melody of 1 to 512 characters');
+      }
+      break;
+    case 'song':
+      assertNonEmptyString(value, sub(field, key));
+      break;
+    case 'speech': {
+      const bytes = typeof value === 'string' ? new TextEncoder().encode(value).length : 0;
+      if (bytes < 1 || bytes > 512) throw new AwtrixValidationError(sub(field, key), 'must be 1..512 bytes');
+      break;
+    }
+    case 'track':
+      assertInteger(value, sub(field, key), 1, 2999);
+      break;
+    case 'station':
+      if (!options.station) throw new AwtrixValidationError(sub(field, key), 'not here');
+      if (!(typeof value === 'string' && value.length > 0) && !(typeof value === 'number' && Number.isInteger(value) && value >= 0)) {
+        throw new AwtrixValidationError(sub(field, key), 'must be a station name, a position from 0 or a stream address');
+      }
+      break;
+  }
+  if (obj.loop !== undefined) {
+    if (typeof obj.loop !== 'boolean') throw new AwtrixValidationError(sub(field, 'loop'), 'must be true or false');
+    if (key === 'station') throw new AwtrixValidationError(sub(field, 'loop'), 'not with station');
+  }
+  if (obj.nextBar !== undefined) {
+    if (typeof obj.nextBar !== 'boolean') throw new AwtrixValidationError(sub(field, 'nextBar'), 'must be true or false');
+    if (key !== 'song' || obj.loop !== true) throw new AwtrixValidationError(sub(field, 'nextBar'), 'only with a looping song');
+  }
+}
+
+function sub(field: string, key: string): string {
+  return field ? `${field}.${key}` : key;
+}

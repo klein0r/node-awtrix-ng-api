@@ -1,4 +1,5 @@
 import type { AppName } from './common.js';
+import type { Weekday, WeekdayBarUpdate } from './settings.js';
 
 export type AppOrigin = 'builtin' | 'pushed' | 'script' | 'module';
 
@@ -71,6 +72,8 @@ interface AppInfoBase {
 
 export interface BuiltinAppInfo extends AppInfoBase {
   origin: 'builtin';
+  /** The app offers settings under `apps.getBuiltinConfig()`. */
+  config?: boolean;
 }
 
 export interface PushedAppInfo extends AppInfoBase {
@@ -141,6 +144,8 @@ interface ScriptConfigFieldBase {
   label: string;
   /** One line of explanation under the label. */
   help?: string;
+  /** The part of the settings form the field belongs to. */
+  group?: string;
 }
 
 export interface ScriptConfigBoolField extends ScriptConfigFieldBase {
@@ -229,6 +234,76 @@ export interface ScriptSoundList {
   files: ScriptSoundFile[];
   usedBytes: number;
   totalBytes: number;
+}
+
+/* ------------------------------------------------------------------------------------------ */
+/* Built-in app settings                                                                      */
+/* ------------------------------------------------------------------------------------------ */
+
+/** The part of a built-in app's form a setting belongs to. */
+export type BuiltinConfigGroup = 'time' | 'calendar' | 'date' | 'weekday';
+
+interface BuiltinConfigFieldBase {
+  /** The setting's name; a weekday bar member is dotted, e.g. `weekdayBar.show`. */
+  key: string;
+  /** Where the value goes in a `PATCH`: `['weekdayBar', 'show']` is sent as `{ weekdayBar: { show } }`. */
+  path: string[];
+  /** Omitted for apps with one part. */
+  group?: BuiltinConfigGroup | (string & {});
+}
+
+export interface BuiltinConfigBoolField extends BuiltinConfigFieldBase {
+  type: 'bool';
+  default: boolean;
+  value: boolean;
+}
+
+export interface BuiltinConfigSelectField extends BuiltinConfigFieldBase {
+  type: 'select';
+  /** The accepted values; `timeMode` offers numbers, the other settings strings. */
+  options: (string | number)[];
+  default: string | number;
+  value: string | number;
+}
+
+export interface BuiltinConfigColorField extends BuiltinConfigFieldBase {
+  type: 'color';
+  /** `true` where `null` ("use the global text color") is allowed. */
+  nullable?: boolean;
+  /** Packed `0xRRGGBB`, or `null` where nullable. */
+  default: number | null;
+  value: number | null;
+}
+
+export interface BuiltinConfigDaysField extends BuiltinConfigFieldBase {
+  type: 'days';
+  /** Lowercase weekday names, Sunday first. */
+  default: Weekday[];
+  value: Weekday[];
+}
+
+/** One setting of a built-in app, discriminated by `type`. */
+export type BuiltinConfigField = BuiltinConfigBoolField | BuiltinConfigSelectField | BuiltinConfigColorField | BuiltinConfigDaysField;
+
+/** `GET /api/v1/apps/builtin/{name}/config`. */
+export interface BuiltinAppConfig {
+  name: string;
+  /** Depends on the device; empty for an app without settings (e.g. the TC002's Status). */
+  fields: BuiltinConfigField[];
+  warnings: string[];
+}
+
+/**
+ * `PATCH /api/v1/apps/builtin/{name}/config` body: each setting at its field's `path`. Colors
+ * take any color form, `null` only where `nullable`.
+ */
+export type BuiltinAppConfigUpdate = Record<string, string | number | boolean | null | WeekdayBarUpdate>;
+
+/** Reply of a built-in app settings change; `error` is always `null`. */
+export interface BuiltinConfigWriteResult {
+  ok: true;
+  name: string;
+  error: null;
 }
 
 interface SharedValueBase {

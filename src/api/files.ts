@@ -83,6 +83,20 @@ export class FilesApi extends ApiModule {
     return this.ok({ method: 'PUT', path: '/api/v1/icons/origins', json: { name, hub, slug, sha256 }, options });
   }
 
+  /**
+   * `POST /api/v1/icons/rename` - renames an icon (same extension); its origin record moves
+   * along. Apps that use the old name show no icon until changed. `409 nameTaken` when the new
+   * name exists as `.gif` or `.jpg`.
+   */
+  async renameIcon(from: string, to: string, options?: RequestOptions): Promise<OkResponse> {
+    assertIconFileName(from);
+    assertIconFileName(to);
+    if (from.slice(from.lastIndexOf('.')) !== to.slice(to.lastIndexOf('.'))) {
+      throw new AwtrixValidationError('to', 'must have the same extension as from');
+    }
+    return this.ok({ method: 'POST', path: '/api/v1/icons/rename', json: { from, to }, options });
+  }
+
   /** `DELETE /api/v1/icons/origins?name=` - removes the link only, the icon stays. */
   async deleteIconOrigin(fileName: string, options?: RequestOptions): Promise<OkResponse> {
     assertIconFileName(fileName);
