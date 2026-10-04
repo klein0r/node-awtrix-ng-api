@@ -114,6 +114,43 @@ describe('gamepad and voice', () => {
   });
 });
 
+describe('OAuth and voice writes', () => {
+  it('lists, reads and changes sign-ins with the web UI headers', async () => {
+    mock.reply({ body: { redirectUri: 'https://awtrix.de/oauth/callback', apps: [] } });
+    expect((await client.oauth.list()).redirectUri).toBe('https://awtrix.de/oauth/callback');
+    expectRequest('GET', '/api/v1/oauth');
+
+    mock.reply({ body: { name: 'Spotify', provider: 'accounts.spotify.com', scope: 's', pkce: true, clientId: '', clientSecretSet: false, state: 'signedOut' } });
+    expect((await client.oauth.get('Spotify')).state).toBe('signedOut');
+    expectRequest('GET', '/api/v1/oauth/Spotify');
+
+    await client.oauth.setCredentials('Spotify', { clientId: 'abc', clientSecret: 'xyz' });
+    expectRequest('POST', '/api/v1/oauth/Spotify', { clientId: 'abc', clientSecret: 'xyz' });
+    expect(mock.last.headers['x-awtrix-oauth']).toBe('1');
+    expect(mock.last.headers.origin).toBe(`http://${mock.host}`);
+
+    mock.reply({ body: { url: 'https://accounts.spotify.com/authorize?x=1' } });
+    expect(await client.oauth.startSignIn('Spotify')).toBe('https://accounts.spotify.com/authorize?x=1');
+    expectRequest('POST', '/api/v1/oauth/Spotify/start', {});
+
+    mock.reply({ status: 202, body: { ok: true } });
+    await client.oauth.finishSignIn('Spotify', 'the-code', 'the-state');
+    expectRequest('POST', '/api/v1/oauth/Spotify/code', { code: 'the-code', state: 'the-state' });
+
+    await client.oauth.signOut('Spotify');
+    expectRequest('DELETE', '/api/v1/oauth/Spotify');
+    expect(mock.last.headers['x-awtrix-oauth']).toBe('1');
+  });
+
+  it('changes the voice settings with the web UI headers', async () => {
+    await client.voice.update({ enabled: false, device: 'abc123' });
+    expectRequest('POST', '/api/v1/voice', { enabled: false, device: 'abc123' });
+    expect(mock.last.headers['x-awtrix-voice']).toBe('1');
+    expect(mock.last.headers.origin).toBe(`http://${mock.host}`);
+    await expect(client.voice.update({ device: 'not valid!' })).rejects.toThrow(/device/);
+  });
+});
+
 describe('built-in app settings', () => {
   it('reads and changes them', async () => {
     mock.reply({

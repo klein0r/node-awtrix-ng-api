@@ -61,6 +61,8 @@ export interface TransportRequest {
   /** A raw body (text, FormData or bytes) sent as is. */
   body?: string | FormData | Uint8Array;
   contentType?: string;
+  /** Extra headers for this request. */
+  headers?: Record<string, string>;
   response?: ResponseKind;
   /** Statuses (besides 2xx) that should not throw. */
   acceptStatus?: readonly number[];
@@ -165,7 +167,7 @@ export class HttpTransport {
     const method = req.method.toUpperCase();
     const path = req.path;
     // `false` keeps axios from adding its form-urlencoded default to bodyless requests.
-    const headers: Record<string, string | false> = { ...this.headers, 'Content-Type': false };
+    const headers: Record<string, string | false> = { ...this.headers, ...req.headers, 'Content-Type': false };
     let data: unknown;
 
     if (req.json !== undefined) {

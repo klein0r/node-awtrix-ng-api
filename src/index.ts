@@ -22,6 +22,7 @@ export { FilesApi } from './api/files.js';
 export { GamepadApi } from './api/gamepad.js';
 export { IndicatorsApi } from './api/indicators.js';
 export { NotificationsApi } from './api/notifications.js';
+export { OAuthApi } from './api/oauth.js';
 export { ScriptsApi } from './api/scripts.js';
 export { SettingsApi } from './api/settings.js';
 export { SystemApi, type WifiScanWaitOptions } from './api/system.js';

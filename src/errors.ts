@@ -4,6 +4,7 @@
  */
 export type AwtrixErrorCode =
   | 'invalidJson'
+  | 'parseError'
   | 'invalidPinConfig'
   | 'invalidPath'
   | 'invalidName'

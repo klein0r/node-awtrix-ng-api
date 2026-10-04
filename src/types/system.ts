@@ -364,6 +364,22 @@ export interface MqttTlsState {
 
 export type VoiceConnectionState = 'offline' | 'connecting' | 'ready' | 'starting' | 'listening' | 'processing' | 'speaking' | 'error';
 
+/** `POST /api/v1/voice` body. Omitted fields keep their value. */
+export interface VoiceUpdate {
+  /** `true` needs an address and a token. `false` closes the connection to Home Assistant. */
+  enabled?: boolean;
+  /** Home Assistant origin, e.g. `http://homeassistant.local:8123`, at most 512 characters. Send the token again after changing it. */
+  url?: string;
+  /** Assist pipeline ID, at most 128 characters; `""` for the default. */
+  pipeline?: string;
+  /** Home Assistant device ID whose area is the clock's room (letters and digits, up to 64); `""` for none. */
+  device?: string;
+  /** A long-lived access token, at most 4096 characters. */
+  token?: string;
+  /** `true` deletes the saved token. */
+  clearToken?: true;
+}
+
 /** `GET /api/v1/voice` - Home Assistant Voice settings and connection. */
 export interface VoiceState {
   config: {

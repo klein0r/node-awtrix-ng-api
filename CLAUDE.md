@@ -54,7 +54,7 @@ The `beta-1.1.7` branch targets firmware 1.1.7 (closed beta, Ulanzi TC002). Its 
 
 Sound, notification sounds, sound settings and the gamepad follow 1.1.7 only, with no fallback to the older format: the user chose to implement only what the beta documents, because the ESP32 firmware is expected to follow. Only fields the documentation describes are typed. Fields a device sends beyond that (on 1.1.7: `gamepad.remote`, `capabilities.gamepadRemote`) are left out, also from the fixtures.
 
-When the docs change, read the release notes first (https://ang.blueforcer.de/releases/), then diff the new spec against the previous one, not just against the code. A name-based check misses nested additions (e.g. `voice.config.device`). The payload keys are not in the OpenAPI spec at all; they live only on `reference/payload/` and must be compared separately (that is how `textAlign` replacing `textCenter` in 1.1.7 was found). Then:
+When the docs change, read the release notes first (https://ang.blueforcer.de/releases/), then diff the new spec against the previous one, not just against the code. A name-based check misses nested additions (e.g. `voice.config.device`). The OpenAPI spec is incomplete. The payload keys live only on `reference/payload/`, and some routes (OAuth in 1.1.7) only in the route index of `reference/http/`. Compare both separately; that is how `textAlign` replacing `textCenter` and the OAuth routes were found. Then:
 - Compare each schema's keys both ways with the TS interfaces, so removed fields are caught too.
 - `test/firmware-beta.test.ts` covers the beta-only routes.
 - `test/fixtures/tc002-1.1.7.ts` holds real TC002 responses checked with `satisfies`. Refresh it from a device when the types change, and replace network names and addresses first.
@@ -62,6 +62,7 @@ When the docs change, read the release notes first (https://ang.blueforcer.de/re
 Verified on a real TC002 (1.1.7):
 - Every documented sound, gamepad, built-in config and MQTT TLS behaviour matched, including the error messages.
 - `POST /api/v1/icons/rename` is documented but answers `404 unknown route` on 1.1.7.
+- The OAuth and voice write routes answer `403 forbiddenOrigin` unless the request carries `X-Awtrix-OAuth: 1` / `X-Awtrix-Voice: 1` plus an `Origin` naming the device. The docs show exactly this for API clients (`ApiModule.webUiHeaders()`). OAuth checks that the script exists before the origin.
 - `textCenter` is no longer documented. The device still accepts it without even checking its type, but it is not typed; `textAlign` replaces it.
 
 Verified on a real TC002 (1.1.5), still relevant:

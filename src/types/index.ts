@@ -8,3 +8,4 @@ export * from './apps.js';
 export * from './audio.js';
 export * from './system.js';
 export * from './files.js';
+export * from './oauth.js';

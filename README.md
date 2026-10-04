@@ -27,11 +27,11 @@ Changed in 1.1.6/1.1.7 (see the [release notes](https://ang.blueforcer.de/releas
 - Payload: `textAlign` (`start`, `center`, `end`) replaces `textCenter`; `icon` also takes an `http(s)://` address (TC002).
 - Melodies and MP3s can no longer share a name (`409 nameTaken`).
 - Gamepads use two slots: `gamepad.get()` lists both, `pair()` returns the slot, `forget(slot)`.
-- New: `audio.playClip()` (a WAV or MP3 played once, TC002), built-in app settings (`apps.getBuiltinConfig` / `updateBuiltinConfig`), MQTT over TLS (`system.getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`) and `files.renameIcon()`.
+- New: `audio.playClip()` (a WAV or MP3 played once, TC002), built-in app settings (`apps.getBuiltinConfig` / `updateBuiltinConfig`), MQTT over TLS (`system.getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`), `files.renameIcon()`, script sign-ins via OAuth (`oauth`) and changing the Home Assistant Voice settings (`voice.update`, incl. the room `device`).
 
 Also part of the beta: region layouts (`layout`), data URL icons, fonts from `capabilities.fonts`, script data and sounds, Home Assistant Voice status and TC002 update packages (`.awup`).
 
-On fixed hardware such as the TC002, `system.get()` omits the panel and pin fields, so they are optional in `SystemConfig`. Changing the Home Assistant Voice settings is not offered: the firmware accepts that only from the device's own web page. `files.renameIcon()` follows the documentation, but a TC002 on 1.1.7 does not have the route yet and answers `404`.
+On fixed hardware such as the TC002, `system.get()` omits the panel and pin fields, so they are optional in `SystemConfig`. The OAuth and voice write routes accept requests only as the device's own web UI sends them; the client adds the documented `X-Awtrix-OAuth` / `X-Awtrix-Voice` and `Origin` headers. `files.renameIcon()` follows the documentation, but a TC002 on 1.1.7 does not have the route yet and answers `404`.
 
 You can read the versions at runtime:
 
@@ -114,7 +114,8 @@ The client groups the routes into namespaces. All methods return promises.
 | `system` | `get`, `getWithSecrets`, `update`, `scanWifi`, `waitForWifiScan`, `getLogs`, `getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`, `updateFirmware`, `restoreBackup` | `/api/v1/system`, `/api/v1/logs`, `/api/v1/mqtt/tls`, `/update`, `/api/v1/restore` |
 | `files` | `list`, `upload`, `uploadIcon`, `delete`, `download`, `renameIcon`, `listIconOrigins`, `setIconOrigin`, `deleteIconOrigin` | `/api/v1/files`, `/api/v1/icons/rename`, `/api/v1/icons/origins`, static assets |
 | `gamepad` | `get`, `pair`, `forget` | `/api/v1/gamepad` (TC002) |
-| `voice` | `get` | `/api/v1/voice` (TC002) |
+| `voice` | `get`, `update` | `/api/v1/voice` (TC002) |
+| `oauth` | `list`, `get`, `setCredentials`, `startSignIn`, `finishSignIn`, `signOut` | `/api/v1/oauth` (TC002) |
 
 ### Examples
 
