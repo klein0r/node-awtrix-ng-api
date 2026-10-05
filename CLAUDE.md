@@ -58,15 +58,17 @@ Since firmware 1.2.0 the docs are split per device, and the library covers the u
 
 **A field that only one kind of device has must be optional in the types.** Examples: `clockFace` and `radioVolume` are TC002 only; `tempOffset`, `webPort` and the pins are ESP32 only. The ESP32 spec leaves out ESP32-S3 features (I²S pins, `pinAmpEnable`, PSRAM fields), but its reference pages still describe them, so they stay. Both devices use the 1.2.0 sound model (`file`/`rtttl`/`track` + `loop`, `stop` groups, `volume`); firmware 1.1.x is not supported for sound, notification sounds, sound settings and the gamepad.
 
-Only fields the documentation describes are typed. A TC002 still sends some ESP32 fields in `/system` (e.g. `tempOffset`, `webPort`); they are optional anyway.
+Only fields the documentation describes are typed. Devices send a little beyond their own spec, which the optional fields already cover: a TC002 sends ESP32 fields in `/system` (e.g. `tempOffset`, `webPort`); an ESP32 sends `radioVolume` in the settings, and also answers `GET /api/v1/audio/stations`.
 
 When the docs change:
 - Read the release notes first.
 - Diff each device's spec against the previous snapshot of the same spec, field by field incl. nested keys, enums and required (a flattening diff, not a name check; that is how `voice.config.device` was found).
 - Check required/optional against both specs. The OpenAPI specs are incomplete: payload keys live only on `reference/payload/`, and some routes have at times been only in the route index of `reference/http/`. Compare both separately for each device.
-- `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.0.ts` holds real TC002 responses checked with `satisfies`. Refresh it from a device when the types change, and replace network names and addresses first.
+- `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.0.ts` and `test/fixtures/esp32-1.2.0.ts` (a TC001) hold real responses checked with `satisfies`. Refresh them from a device when the types change, and replace network names and addresses first.
 
 **Live tests on a real device: never call `device.sleep`, `reboot`, `factoryReset`, `settings.reset`, firmware update or restore.** A TC002 still answers `POST /api/v1/device/sleep` with `200` and restarts its runtime, although its docs do not list the route.
+
+Verified on a real ESP32 (TC001, 1.2.0): all read responses match the types; `speech`/`song`/`station` answer `503 unavailable`, TC002-only settings `422 unknown field`, and the gamepad, voice, OAuth and MQTT TLS routes `404`.
 
 Verified on a real TC002 (1.2.0):
 - Every documented sound, gamepad (incl. phone sessions), built-in config, MQTT TLS, OAuth and voice behaviour matched, including the error messages.
@@ -80,7 +82,7 @@ The firmware repo (https://github.com/Blueforcer/awtrix-ng) has the docs sources
 - `overlaySettings.blend` is a boolean
 - `transitionDirection` is `normal`/`reverse`
 - file deletion uses `?path=`
-- the settings have 45 keys on a TC002 and 40 on an ESP32 (1.2.0)
+- the settings have 45 keys on a TC002 and 40 on an ESP32 per spec (1.2.0); a real ESP32 sends 41 (`radioVolume` too)
 
 ## Tests
 
