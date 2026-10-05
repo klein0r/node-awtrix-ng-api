@@ -17,7 +17,7 @@ Requires Node.js 22 or newer.
 | AWTRIX NG HTTP API | v1 |
 | AWTRIX NG firmware | built against 1.2.0 for the Ulanzi TC002 and ESP32 (incl. TC001), verified on a TC002 running 1.2.0 |
 
-Since 1.2.0 the [AWTRIX NG](https://github.com/Blueforcer/awtrix-ng) documentation is split per device (TC002 and ESP32). The library covers both. Fields only one kind of device has are optional in the types, and routes a device does not have answer `404`. Sound, notification sounds, sound settings and the gamepad use the 1.2.0 format. **Firmware before 1.2.0 is not supported for these parts**; use 0.2.x for firmware 1.1.x.
+Since 1.2.0 the [AWTRIX NG documentation](https://blueforcer.github.io/awtrix-ng/) is split per device (TC002 and ESP32). The library covers both. Fields only one kind of device has are optional in the types, and routes a device does not have answer `404`. Sound, notification sounds, sound settings and the gamepad use the 1.2.0 format. **Firmware before 1.2.0 is not supported for these parts**; use 0.2.x for firmware 1.1.x.
 
 Changes compared with firmware 1.1.x and library 0.2.x (see the release notes of each device in the AWTRIX NG documentation):
 
