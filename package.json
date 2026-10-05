@@ -1,6 +1,6 @@
 {
   "name": "awtrix-ng-api",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Type-safe HTTP API client for AWTRIX NG matrix clocks (Node.js, TypeScript, axios)",
   "keywords": [
     "awtrix",
