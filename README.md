@@ -15,23 +15,23 @@ Requires Node.js 22 or newer.
 | | Version |
 |---|---|
 | AWTRIX NG HTTP API | v1 |
-| AWTRIX NG firmware | built against 1.1.7 (closed beta, incl. Ulanzi TC002), verified on a TC002 running 1.1.7 |
+| AWTRIX NG firmware | built against 1.2.0 for the Ulanzi TC002 and ESP32 (incl. TC001), verified on a TC002 running 1.2.0 |
 
-The 1.1.6/1.1.7 betas reworked sound, and this version of the library follows it. **Firmware 1.1.6 and older is not supported** for sound, notification sounds, sound settings and the gamepad; the ESP32 firmware is expected to follow. Use 0.2.x for firmware 1.1.2 to 1.1.5.
+Since 1.2.0 the documentation is split per device ([TC002](https://ang.blueforcer.de/tc002/), [ESP32](https://ang.blueforcer.de/esp32/)). The library covers both. Fields only one kind of device has are optional in the types, and routes a device does not have answer `404`. Sound, notification sounds, sound settings and the gamepad use the format introduced with the TC002 betas, which ESP32 adopted in 1.2.0. **Firmware before that is not supported for these parts**; use 0.2.x for firmware 1.1.2 to 1.1.5.
 
-Changed in 1.1.6/1.1.7 (see the [release notes](https://ang.blueforcer.de/releases/)):
+Changes since the TC002 betas (see the release notes):
 
 - Sound: `audio.play()` takes a stored name, one sound object (`file`, `rtttl`, `song`, `speech`, `track` or `station`, plus `loop`) or a list of 1-4 alternatives. `audio.stop()` takes a group (`alert`, `app`, `radio`).
 - Notifications take the same sound in `sound`; `soundRtttl` and `soundLoop` are gone.
-- Settings: one master `volume` with `alertVolume`, `appVolume` and `radioVolume`; `musicSource`, `bootSound`, `calendarAnimation` and `dateWeekdayBar` are new. `soundEnabled` and the per-output volumes are gone.
+- Settings: one master `volume` with `alertVolume`, `appVolume` and (TC002) `radioVolume`; `musicSource`, `bootSound`, `calendarAnimation` and `dateWeekdayBar` are new. `soundEnabled` and the per-output volumes are gone.
 - Payload: `textAlign` (`start`, `center`, `end`) replaces `textCenter`; `icon` also takes an `http(s)://` address (TC002).
 - Melodies and MP3s can no longer share a name (`409 nameTaken`).
-- Gamepads use two slots: `gamepad.get()` lists both, `pair()` returns the slot, `forget(slot)`.
-- New: `audio.playClip()` (a WAV or MP3 played once, TC002), built-in app settings (`apps.getBuiltinConfig` / `updateBuiltinConfig`), MQTT over TLS (`system.getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`), `files.renameIcon()`, script sign-ins via OAuth (`oauth`) and changing the Home Assistant Voice settings (`voice.update`, incl. the room `device`).
+- Gamepads use two slots: `gamepad.get()` lists both, `pair()` returns the slot, `forget(slot)`. A phone can play too: `gamepad.connectRemote()` / `disconnectRemote()`.
+- New: `audio.playClip()`, built-in app settings (`apps.getBuiltinConfig` / `updateBuiltinConfig`), MQTT over TLS, `files.renameIcon()`, OAuth sign-ins (`oauth`), `voice.update()` and `device.usbPower`.
 
-Also part of the beta: region layouts (`layout`), data URL icons, fonts from `capabilities.fonts`, script data and sounds, Home Assistant Voice status and TC002 update packages (`.awup`).
+Also part of the TC002 firmware: region layouts (`layout`), data URL icons, fonts from `capabilities.fonts`, script data and sounds, Home Assistant Voice status and TC002 update packages (`.awup`).
 
-On fixed hardware such as the TC002, `system.get()` omits the panel and pin fields, so they are optional in `SystemConfig`. The OAuth and voice write routes accept requests only as the device's own web UI sends them; the client adds the documented `X-Awtrix-OAuth` / `X-Awtrix-Voice` and `Origin` headers. `files.renameIcon()` follows the documentation, but a TC002 on 1.1.7 does not have the route yet and answers `404`.
+On fixed hardware such as the TC002, `system.get()` omits the panel and pin fields, so they are optional in `SystemConfig`. The OAuth and voice write routes accept requests only as the device's own web UI sends them; the client adds the documented `X-Awtrix-OAuth` / `X-Awtrix-Voice` and `Origin` headers.
 
 You can read the versions at runtime:
 
@@ -113,7 +113,7 @@ The client groups the routes into namespaces. All methods return promises.
 | `audio` | `getState`, `play`, `playFile`, `playRtttl`, `playSong`, `speak`, `playTrack`, `playStation`, `playClip`, `stop`, `listMelodies`, `saveMelody`, `deleteMelody`, `listMp3`, `uploadMp3`, `deleteMp3`, `getStations`, `setStations` | `/api/v1/audio` |
 | `system` | `get`, `getWithSecrets`, `update`, `scanWifi`, `waitForWifiScan`, `getLogs`, `getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`, `updateFirmware`, `restoreBackup` | `/api/v1/system`, `/api/v1/logs`, `/api/v1/mqtt/tls`, `/update`, `/api/v1/restore` |
 | `files` | `list`, `upload`, `uploadIcon`, `delete`, `download`, `renameIcon`, `listIconOrigins`, `setIconOrigin`, `deleteIconOrigin` | `/api/v1/files`, `/api/v1/icons/rename`, `/api/v1/icons/origins`, static assets |
-| `gamepad` | `get`, `pair`, `forget` | `/api/v1/gamepad` (TC002) |
+| `gamepad` | `get`, `pair`, `forget`, `connectRemote`, `disconnectRemote` | `/api/v1/gamepad` (TC002) |
 | `voice` | `get`, `update` | `/api/v1/voice` (TC002) |
 | `oauth` | `list`, `get`, `setCredentials`, `startSignIn`, `finishSignIn`, `signOut` | `/api/v1/oauth` (TC002) |
 

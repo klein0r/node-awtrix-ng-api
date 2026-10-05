@@ -1,32 +1,30 @@
 /**
- * Real responses of an Ulanzi TC002 running AWTRIX NG 1.1.7, recorded 2026-10-04
+ * Real responses of an Ulanzi TC002 running AWTRIX NG 1.2.0, recorded 2026-10-05
  * (network names and addresses replaced). `satisfies` makes the typecheck fail when the
  * types drift from what the device sends, including unknown fields.
- *
- * Removed because the beta documentation does not describe them: gamepad.remote, capabilities.gamepadRemote.
  */
-import type { AppInfo, AudioState, BuiltinAppConfig, Capabilities, DeviceState, DisplayState, GamepadState, MelodyList, Mp3List, MqttTlsState, Settings, SystemConfig, VoiceState } from '../../src/index.js';
+import type { AppInfo, AudioState, BuiltinAppConfig, Capabilities, DeviceState, DisplayState, GamepadState, MelodyList, Mp3List, MqttTlsState, OAuthList, Settings, SystemConfig, VoiceState } from '../../src/index.js';
 
 export const device = {
-  "version": "1.1.7",
+  "version": "1.2.0",
   "uid": "ccc4b277a755",
   "boardType": "tc002",
   "soc": "armv7l",
   "updateImage": "awtrix-ng-tc002.awup",
   "ipAddress": "192.168.1.50",
   "hostname": "awtrixng-77a755",
-  "wifiRssi": -38,
-  "uptimeSeconds": 1537,
-  "freeHeapBytes": 13807616,
-  "minFreeHeapBytes": 13783040,
+  "wifiRssi": -42,
+  "uptimeSeconds": 3197,
+  "freeHeapBytes": 13709312,
+  "minFreeHeapBytes": 13672448,
   "scriptingRunning": true,
   "scriptHeapPool": "system",
-  "scriptHeapBudgetBytes": 4194304,
+  "scriptHeapBudgetBytes": 4167680,
   "resetReason": "poweron",
   "fps": 42,
   "brightness": 141,
   "batteryPercent": 0,
-  "batteryVoltage": 3.59,
+  "batteryVoltage": 0,
   "lowBattery": false,
   "matrixPower": true,
   "currentApp": "Status",
@@ -79,9 +77,10 @@ export const device = {
     "source": "",
     "state": "off"
   },
+  "usbPower": true,
   "update": {
     "state": "confirmed",
-    "release": "1.1.7-gb973334d4347-5ec2569adee9",
+    "release": "1.2.0-g8f8edce35de2-d17d1b80e1fc",
     "error": ""
   }
 } satisfies DeviceState;
@@ -96,11 +95,9 @@ export const settings = {
   "transitionDurationMs": 1000,
   "appDurationMs": 7000,
   "timeMode": 1,
-  "clockFace": "sheet",
   "calendarHeaderColor": "#FF0000",
   "calendarTextColor": "#000000",
   "calendarBodyColor": "#FFFFFF",
-  "calendarAnimation": true,
   "time24h": true,
   "timeLeadingZero": true,
   "timeShowSeconds": false,
@@ -113,7 +110,6 @@ export const settings = {
   "dateMonthNames": false,
   "useCelsius": true,
   "blockNavigation": false,
-  "bootSound": true,
   "uppercase": true,
   "timeColor": null,
   "dateColor": null,
@@ -124,11 +120,14 @@ export const settings = {
   "radioVolume": 71,
   "appVolume": 100,
   "alertVolume": 100,
-  "musicSource": "auto",
   "saturation": 100,
   "gamma": 1.899999976,
   "colorCorrection": null,
   "colorTint": null,
+  "clockFace": "sheet",
+  "musicSource": "auto",
+  "calendarAnimation": true,
+  "bootSound": true,
   "scroll": {
     "mode": "wrap",
     "direction": "left",
@@ -187,26 +186,10 @@ export const apps = [
     "config": false
   },
   {
-    "name": "mygraph",
-    "enabled": true,
-    "inLoop": false,
-    "slot": 1,
-    "present": false,
-    "origin": null
-  },
-  {
-    "name": "mynumber",
-    "enabled": true,
-    "inLoop": false,
-    "slot": 2,
-    "present": false,
-    "origin": null
-  },
-  {
     "name": "Time",
-    "enabled": false,
-    "inLoop": false,
-    "slot": null,
+    "enabled": true,
+    "inLoop": true,
+    "slot": 1,
     "present": true,
     "origin": "builtin",
     "config": true
@@ -315,17 +298,6 @@ export const capabilities = {
   "sensors": {
     "light": false
   },
-  "ble": true,
-  "gamepad": true,
-  "oauth": true,
-  "voice": true,
-  "clockFaces": [
-    "sheet",
-    "ring",
-    "flap",
-    "month",
-    "big"
-  ],
   "display": {
     "width": 52,
     "height": 16,
@@ -414,6 +386,12 @@ export const capabilities = {
       "lineHeight": 8
     }
   ],
+  "ble": true,
+  "gamepad": true,
+  "oauth": true,
+  "crypto": true,
+  "tcp": true,
+  "layout": true,
   "layouts": {
     "version": 1,
     "limits": {
@@ -427,6 +405,15 @@ export const capabilities = {
       "scriptHandlesPerScript": 4
     }
   },
+  "gamepadRemote": true,
+  "voice": true,
+  "clockFaces": [
+    "sheet",
+    "ring",
+    "flap",
+    "month",
+    "big"
+  ],
   "mqttTls": true,
   "bootSound": true
 } satisfies Capabilities;
@@ -520,8 +507,8 @@ export const mp3 = {
     }
   ],
   "scripts": [],
-  "usedBytes": 125560,
-  "totalBytes": 6920824
+  "usedBytes": 125749,
+  "totalBytes": 6908725
 } satisfies Mp3List;
 
 export const melodies = {
@@ -535,8 +522,8 @@ export const melodies = {
       "valid": true
     }
   ],
-  "usedBytes": 125560,
-  "totalBytes": 6920824
+  "usedBytes": 125749,
+  "totalBytes": 6908725
 } satisfies MelodyList;
 
 export const gamepad = {
@@ -555,7 +542,8 @@ export const gamepad = {
       "address": "",
       "player": null
     }
-  ]
+  ],
+  "remotes": []
 } satisfies GamepadState;
 
 export const voice = {
@@ -575,6 +563,11 @@ export const mqttTls = {
   "ca": "public",
   "pending": null
 } satisfies MqttTlsState;
+
+export const oauth = {
+  "redirectUri": "https://awtrix.de/oauth/callback",
+  "apps": []
+} satisfies OAuthList;
 
 export const timeConfig = {
   "name": "Time",

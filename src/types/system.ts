@@ -14,6 +14,8 @@ export interface SystemSecrets {
 
 /**
  * Device configuration as returned by `GET`/`PUT /api/v1/system` (secrets omitted).
+ * Fields that only one kind of device has are optional: the TC002 has no configurable panel,
+ * pins, light sensor or web port; only the TC002 has MQTT over TLS.
  * Most changes, and all pin changes, apply after a reboot.
  */
 export interface SystemConfig {
@@ -28,9 +30,9 @@ export interface SystemConfig {
   dns1: string;
   dns2: string;
   /** Boot join timeout in ms, `5000..120000`. */
-  wifiConnectTimeout: number;
+  wifiConnectTimeout?: number;
   /** Roam below this RSSI in dBm, `-90..0`; `0` = off. */
-  wifiRoamRssi: number;
+  wifiRoamRssi?: number;
 
   /* --- MQTT --- */
   /** Requires a non-empty `mqttHost`. */
@@ -59,29 +61,29 @@ export interface SystemConfig {
   /** Empty becomes `awtrixng-<uid>`. */
   hostname: string;
   /** `0..65535`; `0` falls back to 80. */
-  webPort: number;
+  webPort?: number;
   /** Requires non-empty `authUser` and `authPass`. */
   authEnabled: boolean;
   authUser: string;
 
   /* --- Sensors / brightness / battery --- */
   /** °C, `-20..20`. */
-  tempOffset: number;
+  tempOffset?: number;
   /** %, `-50..50`. */
-  humOffset: number;
+  humOffset?: number;
   /** V_cell / V_pin, `0.1..10`. */
-  batteryDividerRatio: number;
+  batteryDividerRatio?: number;
   /** `0..255`. */
-  minBrightness: number;
+  minBrightness?: number;
   /** `0..255`. */
-  maxBrightness: number;
+  maxBrightness?: number;
   /** `0..10`. */
-  ldrFactor: number;
+  ldrFactor?: number;
   /** `0.1..10`, `1` = neutral. */
-  ldrGamma: number;
-  ldrOnGround: boolean;
+  ldrGamma?: number;
+  ldrOnGround?: boolean;
   /** ms, `0..60000`. */
-  brightnessSmoothing: number;
+  brightnessSmoothing?: number;
   /** %, `0..100`; `0` = off. */
   lowBatteryThreshold: number;
 
@@ -102,10 +104,10 @@ export interface SystemConfig {
   swapButtons: boolean;
 
   /* --- Peripherals / misc --- */
-  dfplayer: boolean;
+  dfplayer?: boolean;
   /** HTTP webhook URL fired on a button press. */
   buttonCallback: string;
-  artnet: boolean;
+  artnet?: boolean;
 
   /* --- Display mirroring (1.1.4+) --- */
   /** Let other clocks with the same panel size show this display (UDP 4212). */
@@ -124,7 +126,7 @@ export interface SystemConfig {
   /** ms, `1000..600000`. */
   statsInterval: number;
   /** `0..2`. */
-  tempDecimals: number;
+  tempDecimals?: number;
   debugMode: boolean;
   /** Applies after a reboot. */
   scriptingEnabled: boolean;
@@ -310,6 +312,10 @@ export interface Capabilities {
   tcp?: true;
   /** Since 1.1.4: fonts usable in payloads and layouts. */
   fonts?: FontInfo[];
+  /** Present and `true` while scripts can use prepared layouts (scripting on). */
+  layout?: boolean;
+  /** Present (and `true`) only while a phone can be a gamepad (TC002, scripting on). */
+  gamepadRemote?: true;
   /** Since 1.1.4: limits of region layouts. */
   layouts?: LayoutCapabilities;
 }
@@ -339,6 +345,39 @@ export type GamepadSlot = 1 | 2;
 /** `GET /api/v1/gamepad` - always both slots, empty ones included. */
 export interface GamepadState {
   devices: GamepadDevice[];
+  /** The phones that play (1.2.0+); `[]` when none does. */
+  remotes?: GamepadRemote[];
+}
+
+/** A phone that plays as a gamepad. */
+export interface GamepadRemote {
+  /** The session number, for `gamepad.disconnectRemote()`. */
+  session: number;
+  /** The phone's name. */
+  name: string;
+  player: 1 | 2;
+}
+
+/** `POST /api/v1/gamepad/remote` body. */
+export interface GamepadRemoteRequest {
+  /** The phone's name, at most 32 characters; `"Phone"` when missing. */
+  name?: string;
+  /** Without it the clock picks a free player. Taking a player another phone plays ends that phone's session. */
+  player?: 1 | 2;
+}
+
+/**
+ * `POST /api/v1/gamepad/remote` reply. The phone then sends 32-byte UDP datagrams with the
+ * token to `port` on every change and at least every 100 ms; after one second without one the
+ * session ends.
+ */
+export interface GamepadRemoteSession {
+  /** UDP port, `4214`. */
+  port: number;
+  /** 32 lowercase hex characters, sent as 16 raw bytes in each datagram. */
+  token: string;
+  player: 1 | 2;
+  session: number;
 }
 
 /** `POST /api/v1/gamepad/pair` - the slot the search runs for. */

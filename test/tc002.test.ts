@@ -7,6 +7,7 @@ import {
   type AppPayload,
   type Capabilities,
   type NativeRegion,
+  type Settings,
   type SettingsUpdate,
 } from '../src/index.js';
 import { MockAwtrix } from './mockServer.js';
@@ -98,6 +99,24 @@ describe('gamepad and voice', () => {
     await client.gamepad.forget(1);
     expectRequest('DELETE', '/api/v1/gamepad/1');
     await expect(client.gamepad.forget(3 as never)).rejects.toThrow(/slot/);
+  });
+
+  it('connects and disconnects a phone as gamepad', async () => {
+    mock.reply({ body: { port: 4214, token: 'a'.repeat(32), player: 2, session: 7 } });
+    const session = await client.gamepad.connectRemote({ name: 'Pixel', player: 2 });
+    expect(session).toEqual({ port: 4214, token: 'a'.repeat(32), player: 2, session: 7 });
+    expectRequest('POST', '/api/v1/gamepad/remote', { name: 'Pixel', player: 2 });
+
+    mock.reply({ body: { port: 4214, token: 'b'.repeat(32), player: 1, session: 8 } });
+    await client.gamepad.connectRemote();
+    expectRequest('POST', '/api/v1/gamepad/remote', {});
+
+    await client.gamepad.disconnectRemote(7);
+    expectRequest('DELETE', '/api/v1/gamepad/remote/7');
+
+    await expect(client.gamepad.connectRemote({ player: 3 as never })).rejects.toThrow(/player/);
+    await expect(client.gamepad.connectRemote({ name: 'x'.repeat(33) })).rejects.toThrow(/name/);
+    await expect(client.gamepad.disconnectRemote(0)).rejects.toThrow(/session/);
   });
 
   it('surfaces gamepadsFull', async () => {
@@ -242,6 +261,13 @@ describe('types', () => {
     // @ts-expect-error - effect and backgroundColor exclude each other
     const both: AppPayload = { layout: { version: 1, regions: [], effect: 'Matrix', backgroundColor: '#000' } };
     expect([mixed, twoContents, scrollOnIcon, both]).toHaveLength(4);
+  });
+
+  it('accepts an ESP32 settings response without the TC002-only keys', () => {
+    type Esp32Only = Omit<Settings, 'clockFace' | 'calendarAnimation' | 'bootSound' | 'musicSource' | 'radioVolume'>;
+    const esp32 = {} as Esp32Only;
+    const asSettings: Settings = esp32;
+    expect(asSettings).toBeDefined();
   });
 
   it('types the 1.1.7 settings and capabilities', () => {

@@ -157,8 +157,8 @@ export interface DeviceState {
   humidity?: number;
   /** hPa, requires a pressure-capable sensor. */
   pressureHpa?: number;
-  /** Loudness at the microphone `0..100` (log scale over 40 dB). TC002 only. */
-  soundLevel?: number;
+  /** TC002: `true` while on USB power and charging; present once the power supply was reported. */
+  usbPower?: boolean;
 }
 
 /* ------------------------------------------------------------------------------------------ */

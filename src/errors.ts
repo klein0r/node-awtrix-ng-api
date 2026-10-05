@@ -22,6 +22,8 @@ export type AwtrixErrorCode =
   | 'scriptChanged'
   | 'nameTaken'
   | 'gamepadsFull'
+  | 'invalidPlayer'
+  | 'scanUnavailable'
   | 'notNewer'
   | 'updateBusy'
   | 'payloadTooLarge'

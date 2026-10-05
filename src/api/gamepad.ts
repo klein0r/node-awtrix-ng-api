@@ -1,6 +1,7 @@
 import type { RequestOptions } from '../http.js';
 import type { OkResponse } from '../types/common.js';
-import type { GamepadPairResult, GamepadSlot, GamepadState } from '../types/system.js';
+import type { GamepadPairResult, GamepadRemoteRequest, GamepadRemoteSession, GamepadSlot, GamepadState } from '../types/system.js';
+import { AwtrixValidationError } from '../errors.js';
 import { assertInteger } from '../validation.js';
 import { ApiModule } from './base.js';
 
@@ -27,5 +28,27 @@ export class GamepadApi extends ApiModule {
   async forget(slot: GamepadSlot, options?: RequestOptions): Promise<OkResponse> {
     assertInteger(slot, 'slot', 1, 2);
     return this.ok({ method: 'DELETE', path: `/api/v1/gamepad/${slot}`, options });
+  }
+
+  /**
+   * `POST /api/v1/gamepad/remote` - makes a phone the gamepad of one player
+   * (`capabilities.gamepadRemote`). Resolves with the UDP port and token the phone sends its
+   * controls to. Without `player` the clock picks a free one.
+   */
+  async connectRemote(request: GamepadRemoteRequest = {}, options?: RequestOptions): Promise<GamepadRemoteSession> {
+    if (typeof request !== 'object' || request === null || Array.isArray(request)) {
+      throw new AwtrixValidationError('request', 'must be an object');
+    }
+    if (request.player !== undefined) assertInteger(request.player, 'player', 1, 2);
+    if (request.name !== undefined && (typeof request.name !== 'string' || request.name.length > 32)) {
+      throw new AwtrixValidationError('name', 'must be a string of at most 32 characters');
+    }
+    return this.json({ method: 'POST', path: '/api/v1/gamepad/remote', json: request, options });
+  }
+
+  /** `DELETE /api/v1/gamepad/remote/{session}` - ends one phone's session. `404` for an unknown session. */
+  async disconnectRemote(session: number, options?: RequestOptions): Promise<OkResponse> {
+    assertInteger(session, 'session', 1, Number.MAX_SAFE_INTEGER);
+    return this.ok({ method: 'DELETE', path: `/api/v1/gamepad/remote/${session}`, options });
   }
 }

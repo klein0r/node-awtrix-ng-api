@@ -50,18 +50,28 @@ TypeScript is pinned to `~5.9`. TypeScript 7 removed `moduleResolution: Node10`,
 
 The types track a specific firmware release, recorded in `src/version.ts` (`AWTRIX_FIRMWARE_VERSION`) and in the README's Compatibility table. When you sync with a newer firmware, update both, and use the firmware's `RELEASE_NOTES.md` to see what changed.
 
-The `beta-1.1.7` branch targets firmware 1.1.7 (closed beta, Ulanzi TC002). Its docs are at https://ang.blueforcer.de/reference/http/. The raw OpenAPI spec is at https://ang.blueforcer.de/api/openapi.yaml, and plain text of every page is in https://ang.blueforcer.de/search/search_index.json.
+Since firmware 1.2.0 the docs are split per device, and the library covers the union of both:
+- TC002: https://ang.blueforcer.de/tc002/ (spec `tc002/api/openapi.yaml`, index `tc002/search/search_index.json`, release notes `tc002/releases/`)
+- ESP32 (also TC001 and ESP32-S3 DIY): https://ang.blueforcer.de/esp32/ (spec `esp32/api/openapi.yaml`, index `esp32/search/search_index.json`)
 
-Sound, notification sounds, sound settings and the gamepad follow 1.1.7 only, with no fallback to the older format: the user chose to implement only what the beta documents, because the ESP32 firmware is expected to follow. Only fields the documentation describes are typed. Fields a device sends beyond that (on 1.1.7: `gamepad.remote`, `capabilities.gamepadRemote`) are left out, also from the fixtures.
+**A field that only one kind of device has must be optional in the types.** Examples: `clockFace` and `radioVolume` are TC002 only; `tempOffset`, `webPort` and the pins are ESP32 only. The ESP32 spec leaves out ESP32-S3 features (I²S pins, `pinAmpEnable`, PSRAM fields), but its reference pages still describe them, so they stay. Since 1.2.0, ESP32 also uses the new sound model (`file`/`rtttl`/`track` + `loop`, `stop` groups, `volume`), so the format the TC002 betas introduced is now the one for both devices.
 
-When the docs change, read the release notes first (https://ang.blueforcer.de/releases/), then diff the new spec against the previous one, not just against the code. A name-based check misses nested additions (e.g. `voice.config.device`). The OpenAPI spec is incomplete. The payload keys live only on `reference/payload/`, and some routes (OAuth in 1.1.7) only in the route index of `reference/http/`. Compare both separately; that is how `textAlign` replacing `textCenter` and the OAuth routes were found. Then:
-- Compare each schema's keys both ways with the TS interfaces, so removed fields are caught too.
-- `test/firmware-beta.test.ts` covers the beta-only routes.
-- `test/fixtures/tc002-1.1.7.ts` holds real TC002 responses checked with `satisfies`. Refresh it from a device when the types change, and replace network names and addresses first.
+Only fields the documentation describes are typed. A TC002 still sends some ESP32 fields in `/system` (e.g. `tempOffset`, `webPort`); they are optional anyway.
+
+When the docs change:
+- Read the release notes first.
+- Diff each device's spec against the previous snapshot of the same spec, field by field incl. nested keys, enums and required (a flattening diff, not a name check; that is how `voice.config.device` was found).
+- Check required/optional against both specs. The OpenAPI specs are incomplete: payload keys live only on `reference/payload/`, and some routes (OAuth before 1.2.0) only in the route index of `reference/http/`. Compare both separately for each device.
+- `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.0.ts` holds real TC002 responses checked with `satisfies`. Refresh it from a device when the types change, and replace network names and addresses first.
+
+**Live tests on a real device: never call `device.sleep`, `reboot`, `factoryReset`, `settings.reset`, firmware update or restore.** A TC002 on 1.2.0 still answers `POST /api/v1/device/sleep` with `200` and restarts its runtime, although its docs dropped the route. Older TC002 betas stopped the clock for good.
+
+Verified on a real TC002 (1.2.0):
+- `usbPower`, `capabilities.layout`/`gamepadRemote`, the gamepad remote session routes, `invalidPlayer` and `icons/rename` match the docs.
 
 Verified on a real TC002 (1.1.7):
 - Every documented sound, gamepad, built-in config and MQTT TLS behaviour matched, including the error messages.
-- `POST /api/v1/icons/rename` is documented but answers `404 unknown route` on 1.1.7.
+- `POST /api/v1/icons/rename` answered `404 unknown route` on 1.1.7; 1.2.0 has it.
 - The OAuth and voice write routes answer `403 forbiddenOrigin` unless the request carries `X-Awtrix-OAuth: 1` / `X-Awtrix-Voice: 1` plus an `Origin` naming the device. The docs show exactly this for API clients (`ApiModule.webUiHeaders()`). OAuth checks that the script exists before the origin.
 - `textCenter` is no longer documented. The device still accepts it without even checking its type, but it is not typed; `textAlign` replaces it.
 

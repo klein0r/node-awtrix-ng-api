@@ -76,14 +76,14 @@ export interface Settings {
   /** Ignored on the TC002, which uses {@link clockFace}. */
   timeMode: TimeMode;
   /** Ulanzi TC002 only; other devices store it and ignore it. Default `sheet`. */
-  clockFace: ClockFace;
+  clockFace?: ClockFace;
   /** `null` = inherit `textColor`. */
   timeColor: HexColor | null;
   calendarHeaderColor: HexColor;
   calendarTextColor: HexColor;
   calendarBodyColor: HexColor;
   /** TC002 only: the sheet tears off when the clock appears and at midnight. Other devices store it. */
-  calendarAnimation: boolean;
+  calendarAnimation?: boolean;
 
   /* --- Clock text --- */
   time24h: boolean;
@@ -123,12 +123,12 @@ export interface Settings {
   alertVolume: number;
   /** App group share `0..100` (everything a script plays). Default 100. */
   appVolume: number;
-  /** Radio group share `0..100`. Default 80. */
-  radioVolume: number;
+  /** TC002 only (the ESP32 plays no radio): radio group share `0..100`. Default 80. */
+  radioVolume?: number;
   /** TC002 only: play a sound at power-on (at the alert volume). Other devices store it. */
-  bootSound: boolean;
+  bootSound?: boolean;
   /** TC002 only. Default `auto`. */
-  musicSource: MusicSource;
+  musicSource?: MusicSource;
 
   /* --- Buttons --- */
   blockNavigation: boolean;
