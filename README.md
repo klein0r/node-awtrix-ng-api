@@ -2,7 +2,7 @@
 
 Type-safe Node.js client for the [AWTRIX NG](https://github.com/Blueforcer/awtrix-ng) HTTP API v1, written in TypeScript on top of [axios](https://axios-http.com/).
 
-- Covers every documented route of the [HTTP API reference](https://blueforcer.github.io/awtrix-ng/reference/http/)
+- Covers every documented route of the [AWTRIX NG HTTP API](https://blueforcer.github.io/awtrix-ng/) for the TC002 and ESP32
 - Full type definitions for all payloads, responses and optional parameters
 - One error model: device errors, connection problems and invalid arguments are distinct classes
 - Client-side checks where the firmware would silently wrap values or a request can never succeed
