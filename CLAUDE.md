@@ -48,43 +48,37 @@ TypeScript is pinned to `~5.9`. TypeScript 7 removed `moduleResolution: Node10`,
 
 ## API reference sources
 
-The types track a specific firmware release, recorded in `src/version.ts` (`AWTRIX_FIRMWARE_VERSION`) and in the README's Compatibility table. When you sync with a newer firmware, update both, and use the firmware's `RELEASE_NOTES.md` to see what changed.
+The types track a specific firmware release, recorded in `src/version.ts` (`AWTRIX_FIRMWARE_VERSION`) and in the README's Compatibility table. When you sync with a newer firmware, update both.
 
 Since firmware 1.2.0 the docs are split per device, and the library covers the union of both:
 - TC002: https://ang.blueforcer.de/tc002/ (spec `tc002/api/openapi.yaml`, index `tc002/search/search_index.json`, release notes `tc002/releases/`)
-- ESP32 (also TC001 and ESP32-S3 DIY): https://ang.blueforcer.de/esp32/ (spec `esp32/api/openapi.yaml`, index `esp32/search/search_index.json`)
+- ESP32 (also TC001 and ESP32-S3 DIY): https://ang.blueforcer.de/esp32/ (spec `esp32/api/openapi.yaml`, index `esp32/search/search_index.json`, release notes `esp32/releases/`)
 
-**A field that only one kind of device has must be optional in the types.** Examples: `clockFace` and `radioVolume` are TC002 only; `tempOffset`, `webPort` and the pins are ESP32 only. The ESP32 spec leaves out ESP32-S3 features (I²S pins, `pinAmpEnable`, PSRAM fields), but its reference pages still describe them, so they stay. Since 1.2.0, ESP32 also uses the new sound model (`file`/`rtttl`/`track` + `loop`, `stop` groups, `volume`), so the format the TC002 betas introduced is now the one for both devices.
+**A field that only one kind of device has must be optional in the types.** Examples: `clockFace` and `radioVolume` are TC002 only; `tempOffset`, `webPort` and the pins are ESP32 only. The ESP32 spec leaves out ESP32-S3 features (I²S pins, `pinAmpEnable`, PSRAM fields), but its reference pages still describe them, so they stay. Both devices use the 1.2.0 sound model (`file`/`rtttl`/`track` + `loop`, `stop` groups, `volume`); firmware 1.1.x is not supported for sound, notification sounds, sound settings and the gamepad.
 
 Only fields the documentation describes are typed. A TC002 still sends some ESP32 fields in `/system` (e.g. `tempOffset`, `webPort`); they are optional anyway.
 
 When the docs change:
 - Read the release notes first.
 - Diff each device's spec against the previous snapshot of the same spec, field by field incl. nested keys, enums and required (a flattening diff, not a name check; that is how `voice.config.device` was found).
-- Check required/optional against both specs. The OpenAPI specs are incomplete: payload keys live only on `reference/payload/`, and some routes (OAuth before 1.2.0) only in the route index of `reference/http/`. Compare both separately for each device.
+- Check required/optional against both specs. The OpenAPI specs are incomplete: payload keys live only on `reference/payload/`, and some routes have at times been only in the route index of `reference/http/`. Compare both separately for each device.
 - `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.0.ts` holds real TC002 responses checked with `satisfies`. Refresh it from a device when the types change, and replace network names and addresses first.
 
-**Live tests on a real device: never call `device.sleep`, `reboot`, `factoryReset`, `settings.reset`, firmware update or restore.** A TC002 on 1.2.0 still answers `POST /api/v1/device/sleep` with `200` and restarts its runtime, although its docs dropped the route. Older TC002 betas stopped the clock for good.
+**Live tests on a real device: never call `device.sleep`, `reboot`, `factoryReset`, `settings.reset`, firmware update or restore.** A TC002 still answers `POST /api/v1/device/sleep` with `200` and restarts its runtime, although its docs do not list the route.
 
 Verified on a real TC002 (1.2.0):
-- `usbPower`, `capabilities.layout`/`gamepadRemote`, the gamepad remote session routes, `invalidPlayer` and `icons/rename` match the docs.
-
-Verified on a real TC002 (1.1.7):
-- Every documented sound, gamepad, built-in config and MQTT TLS behaviour matched, including the error messages.
-- `POST /api/v1/icons/rename` answered `404 unknown route` on 1.1.7; 1.2.0 has it.
+- Every documented sound, gamepad (incl. phone sessions), built-in config, MQTT TLS, OAuth and voice behaviour matched, including the error messages.
 - The OAuth and voice write routes answer `403 forbiddenOrigin` unless the request carries `X-Awtrix-OAuth: 1` / `X-Awtrix-Voice: 1` plus an `Origin` naming the device. The docs show exactly this for API clients (`ApiModule.webUiHeaders()`). OAuth checks that the script exists before the origin.
-- `textCenter` is no longer documented. The device still accepts it without even checking its type, but it is not typed; `textAlign` replaces it.
+- `textCenter` is not documented. The device still accepts it without checking its type, but it is not typed; `textAlign` replaces it.
+- The script source upload accepts `Content-Type: text/plain`. The OpenAPI claim of `415` is wrong.
+- Firmware 1.1.x accepted `PUT /api/v1/apps/pushed/next` (a reserved name), and such an app could then not be deleted (`DELETE /api/v1/apps/next` is `405`). 1.2.0 answers `400 invalidName`. Keep the client-side reserved-name check.
 
-Verified on a real TC002 (1.1.5), still relevant:
-- The script source upload accepts `Content-Type: text/plain`. The OpenAPI claim of `415` is wrong; `http.md` is right.
-- `PUT /api/v1/apps/pushed/next` (a reserved name) was accepted by firmware up to 1.1.5, and such an app could then not be deleted (`DELETE /api/v1/apps/next` is `405`). 1.1.6 fixed this (`400 invalidName`). Keep the client-side reserved-name check for older devices.
-
-The authoritative sources are in the firmware repo: `docs/reference/http.md`, `docs/reference/payload.md`, `docs/reference/settings.md` and `docs/api/openapi.yaml`. They contradict each other in places. When they do, the firmware source (`src/core/api/*.cpp`) was used to decide, and future changes should be checked the same way. Decisions made that way:
+The firmware repo (https://github.com/Blueforcer/awtrix-ng) has the docs sources and the firmware code. The doc pages and the OpenAPI spec contradict each other in places. When they do, check the firmware source (`src/core/api/*.cpp`) or a real device. Decisions made that way:
 - a script `error` is an object `{message, line?, hook?}` or `null`
 - `overlaySettings.blend` is a boolean
 - `transitionDirection` is `normal`/`reverse`
 - file deletion uses `?path=`
-- settings have 42 keys
+- the settings have 45 keys on a TC002 and 40 on an ESP32 (1.2.0)
 
 ## Tests
 

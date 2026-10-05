@@ -116,7 +116,7 @@ export class SystemApi extends ApiModule {
    *
    * - ESP32: a matching firmware `.bin`; the device reboots afterwards. A mismatching image
    *   rejects with `400 wrongChip`.
-   * - TC002 (1.1.4+): an `.awup` package; resolves with `applying: true`. Poll
+   * - TC002: an `.awup` package; resolves with `applying: true`. Poll
    *   `device.get()` → `update` after reconnecting to learn the result. Errors include
    *   `invalidPackage`, `wrongTarget` (400) and `notNewer`, `updateBusy` (409).
    *

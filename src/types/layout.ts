@@ -1,5 +1,5 @@
 /**
- * Native-pixel layouts (firmware 1.1.4+): a page split into regions, each with exactly one
+ * Native-pixel layouts: a page split into regions, each with exactly one
  * kind of content. Boxes, fonts and images are checked against the active display; the
  * limits are in `capabilities.layouts`.
  */

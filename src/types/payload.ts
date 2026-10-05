@@ -26,7 +26,7 @@ export interface PlacedIcon {
 export type TextCase = 'inherit' | 'upper' | 'asTyped';
 /** Where still text sits: after the icon / left edge, centered, or at the right edge. */
 export type TextAlign = 'start' | 'center' | 'end';
-/** `small`, `large` or (since 1.1.4) any name from `capabilities.fonts`. */
+/** `small`, `large` or any name from `capabilities.fonts`. */
 export type FontName = LooseString<'small' | 'large'>;
 export type IconMode = 'fixed' | 'pushOnce' | 'push';
 export type LifetimeExpiry = 'remove' | 'mark';
@@ -185,7 +185,7 @@ export interface ClassicAppPayload extends PayloadTiming {
 export type ClassicVisualKey = Exclude<keyof ClassicAppPayload, keyof PayloadTiming | 'layout'>;
 
 /**
- * A page made of regions (firmware 1.1.4+). The layout replaces every classic visual key;
+ * A page made of regions. The layout replaces every classic visual key;
  * only the timing keys stay in the outer object.
  */
 export type LayoutAppPayload = PayloadTiming & {

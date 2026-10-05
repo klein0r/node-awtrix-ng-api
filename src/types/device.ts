@@ -32,7 +32,7 @@ export type MirrorSourceState =
   | 'noMemory'
   | 'showing';
 
-/** What display mirroring is doing (firmware 1.1.4+). */
+/** What display mirroring is doing. */
 export interface MirrorState {
   /** This clock shares its display and is on the network. */
   sharing: boolean;
@@ -133,7 +133,6 @@ export interface DeviceState {
   messageCount: number;
   wifi?: LinkState<WifiConnectionError>;
   mqtt: LinkState<MqttConnectionError>;
-  /** Since 1.1.4. */
   mirror?: MirrorState;
   /** TC002 only: progress of a web update. */
   update?: UpdateState;

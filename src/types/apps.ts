@@ -50,11 +50,11 @@ export interface ScriptMeta {
   version: string;
   /** Icon IDs from the `@icons` header. */
   icons: string[];
-  /** Since 1.1.4. */
+  /** The `@requires` header lines. */
   requires?: ScriptRequirement[];
-  /** Since 1.1.4. */
+  /** The `@needs` header lines. */
   needs?: ScriptNeed[];
-  /** Since 1.1.4. `null` when the script runs on any panel. */
+  /** The `@display` header line; `null` when the script runs on any panel. */
   display?: ScriptDisplayRequirement | null;
 }
 
@@ -88,7 +88,7 @@ export interface ScriptAppInfo extends AppInfoBase {
   skipped?: boolean;
   /** Carries `@headless true` and never draws. */
   headless?: boolean;
-  /** Since 1.1.4: carries `@ondemand` - runs only when started via `switchTo()` or the device menu. */
+  /** Carries `@ondemand` - runs only when started via `switchTo()` or the device menu. */
   ondemand?: boolean;
   /** Declares settings, so `GET /api/v1/apps/{name}/config` has fields. */
   config?: boolean;

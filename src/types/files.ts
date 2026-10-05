@@ -40,16 +40,11 @@ export interface RestoreApplied {
   appLoop?: number;
   radioStations?: number;
   icons?: number;
-  /** Since 1.1.4. */
   iconOrigins?: number;
   melodies?: number;
   palettes?: number;
-  /** Since 1.1.4: MP3 files, the scripts' own sounds included. */
+  /** MP3 files, the scripts' own sounds included. */
   mp3?: number;
-  /** Older firmware. */
-  MP3s?: number;
-  /** Older firmware. */
-  sounds?: number;
   scripts?: number;
   /** Rejected entries. */
   skipped?: number;

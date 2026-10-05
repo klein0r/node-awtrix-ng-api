@@ -43,10 +43,9 @@ export class DeviceApi extends ApiModule {
    * `POST /api/v1/device/sleep` - deep-sleep for `durationMs`, then boot normally. The select
    * button only wakes the device early when it sits on an RTC pin.
    *
-   * **ESP32 only.** A TC002 has no timed sleep and its documentation no longer lists the route,
-   * but a TC002 on 1.2.0 still answers `200` and restarts the AWTRIX runtime (pushed apps are
-   * lost); older TC002 betas stopped the clock for good. Use `display.setPower(false)` to blank
-   * a TC002.
+   * **ESP32 only.** A TC002 has no timed sleep and its documentation does not list the route,
+   * but a TC002 still answers `200` and restarts the AWTRIX runtime (pushed apps are lost).
+   * Use `display.setPower(false)` to blank a TC002.
    */
   async sleep(durationMs: number, options?: RequestOptions): Promise<OkResponse> {
     assertInteger(durationMs, 'durationMs', 1, Number.MAX_SAFE_INTEGER);

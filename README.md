@@ -17,9 +17,9 @@ Requires Node.js 22 or newer.
 | AWTRIX NG HTTP API | v1 |
 | AWTRIX NG firmware | built against 1.2.0 for the Ulanzi TC002 and ESP32 (incl. TC001), verified on a TC002 running 1.2.0 |
 
-Since 1.2.0 the documentation is split per device ([TC002](https://ang.blueforcer.de/tc002/), [ESP32](https://ang.blueforcer.de/esp32/)). The library covers both. Fields only one kind of device has are optional in the types, and routes a device does not have answer `404`. Sound, notification sounds, sound settings and the gamepad use the format introduced with the TC002 betas, which ESP32 adopted in 1.2.0. **Firmware before that is not supported for these parts**; use 0.2.x for firmware 1.1.2 to 1.1.5.
+Since 1.2.0 the documentation is split per device ([TC002](https://ang.blueforcer.de/tc002/), [ESP32](https://ang.blueforcer.de/esp32/)). The library covers both. Fields only one kind of device has are optional in the types, and routes a device does not have answer `404`. Sound, notification sounds, sound settings and the gamepad use the 1.2.0 format. **Firmware before 1.2.0 is not supported for these parts**; use 0.2.x for firmware 1.1.x.
 
-Changes since the TC002 betas (see the release notes):
+Changes compared with firmware 1.1.x and library 0.2.x (see the [TC002](https://ang.blueforcer.de/tc002/releases/) and [ESP32](https://ang.blueforcer.de/esp32/releases/) release notes):
 
 - Sound: `audio.play()` takes a stored name, one sound object (`file`, `rtttl`, `song`, `speech`, `track` or `station`, plus `loop`) or a list of 1-4 alternatives. `audio.stop()` takes a group (`alert`, `app`, `radio`).
 - Notifications take the same sound in `sound`; `soundRtttl` and `soundLoop` are gone.

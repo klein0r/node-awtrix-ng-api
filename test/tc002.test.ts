@@ -270,8 +270,8 @@ describe('types', () => {
     expect(asSettings).toBeDefined();
   });
 
-  it('types the 1.1.7 settings and capabilities', () => {
-    // @ts-expect-error - soundEnabled was removed in 1.1.7
+  it('types the 1.2.0 settings and capabilities', () => {
+    // @ts-expect-error - soundEnabled no longer exists
     const removed: SettingsUpdate = { soundEnabled: false };
     const volumes: SettingsUpdate = { volume: 80, alertVolume: 100, appVolume: 50, radioVolume: 40, musicSource: 'microphone' };
     const tc002Gpio: Capabilities['gpio'] = null;

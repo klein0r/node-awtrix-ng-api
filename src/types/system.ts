@@ -109,7 +109,7 @@ export interface SystemConfig {
   buttonCallback: string;
   artnet?: boolean;
 
-  /* --- Display mirroring (1.1.4+) --- */
+  /* --- Display mirroring --- */
   /** Let other clocks with the same panel size show this display (UDP 4212). */
   mirrorShare?: boolean;
   /** Apps to share, comma separated, case-insensitive. `"*"` = all, `""` = none. */
@@ -270,7 +270,7 @@ export interface GpioCapabilities {
   defaults: Record<string, number>;
 }
 
-/** `GET /api/v1/capabilities`. Keys marked "since 1.1.4" are absent on older firmware. */
+/** `GET /api/v1/capabilities`. Optional keys exist only on some devices or configurations. */
 export interface Capabilities {
   effects: string[];
   /** The subset of `effects` that honours a palette. */
@@ -282,13 +282,12 @@ export interface Capabilities {
   audio: AudioCapabilities;
   /** Whether `PUT /api/v1/apps/script-update/{name}` is available. */
   scriptUpdates?: boolean;
-  /** Pin rules on configurable ESP32 boards; `null` on fixed hardware such as the TC002 (1.1.4+). */
+  /** Pin rules on configurable ESP32 boards; `null` on fixed hardware such as the TC002. */
   gpio: GpioCapabilities | null;
-  /** Since 1.1.4. */
   sensors?: SensorCapabilities;
-  /** Since 1.1.4, TC002 only: the values `settings.clockFace` accepts. */
+  /** TC002 only: the values `settings.clockFace` accepts. */
   clockFaces?: string[];
-  /** Since 1.1.4, e.g. `{ id: 'tc002' }`. */
+  /** e.g. `{ id: 'tc002' }`. */
   platform?: { id: LooseString<'esp32' | 'tc002' | 'linux'> };
   /** Present (and `true`) only where scripts can import `ble` (TC002). */
   ble?: true;
@@ -296,7 +295,7 @@ export interface Capabilities {
   gamepad?: true;
   /** Present (and `true`) only where Home Assistant Voice can be set up (TC002). */
   voice?: true;
-  /** Since 1.1.4. */
+  /** Active dimensions and accepted panel geometry. */
   display?: DisplayCapabilities;
   /** Scripts and music visualizations can hear the microphone (TC002). */
   microphone?: boolean;
@@ -310,13 +309,13 @@ export interface Capabilities {
   oauth?: true;
   /** Present (and `true`) only where scripts can import `tcp` (TC002 with scripting on). */
   tcp?: true;
-  /** Since 1.1.4: fonts usable in payloads and layouts. */
+  /** Fonts usable in payloads and layouts. */
   fonts?: FontInfo[];
   /** Present and `true` while scripts can use prepared layouts (scripting on). */
   layout?: boolean;
   /** Present (and `true`) only while a phone can be a gamepad (TC002, scripting on). */
   gamepadRemote?: true;
-  /** Since 1.1.4: limits of region layouts. */
+  /** Limits of region layouts. */
   layouts?: LayoutCapabilities;
 }
 

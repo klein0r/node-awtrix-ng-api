@@ -68,7 +68,7 @@ export class ScriptsApi extends ApiModule {
 
   /**
    * Removes a script together with its persisted store (`DELETE /api/v1/apps/{name}`). Its own
-   * sounds stay (1.1.4+); remove them with {@link deleteAllSounds}.
+   * sounds stay; remove them with {@link deleteAllSounds}.
    */
   async delete(name: AppName, options?: RequestOptions): Promise<OkResponse> {
     assertAppName(name);
@@ -96,7 +96,7 @@ export class ScriptsApi extends ApiModule {
     return this.json({ method: 'PATCH', path: `/api/v1/apps/${segment(name)}/config`, json: values, options });
   }
 
-  /* --- Saved data (1.1.4+) --- */
+  /* --- Saved data --- */
 
   /**
    * `GET /api/v1/apps/{name}/data` - what the script saved with `store.set()`, without its
@@ -118,7 +118,7 @@ export class ScriptsApi extends ApiModule {
     return this.json({ method: 'PATCH', path: `/api/v1/apps/${segment(name)}/data`, json: values, options });
   }
 
-  /* --- Own sounds (1.1.4+) --- */
+  /* --- Own sounds --- */
 
   /** `GET /api/v1/apps/script/{name}/sounds` - the script's own MP3s with their SHA-256. */
   async listSounds(name: AppName, options?: RequestOptions): Promise<ScriptSoundList> {
