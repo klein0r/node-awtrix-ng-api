@@ -51,8 +51,10 @@ TypeScript is pinned to `~5.9`. TypeScript 7 removed `moduleResolution: Node10`,
 The types track a specific firmware release, recorded in `src/version.ts` (`AWTRIX_FIRMWARE_VERSION`) and in the README's Compatibility table. When you sync with a newer firmware, update both.
 
 Since firmware 1.2.0 the docs are split per device, and the library covers the union of both:
-- TC002: https://ang.blueforcer.de/tc002/ (spec `tc002/api/openapi.yaml`, index `tc002/search/search_index.json`, release notes `tc002/releases/`)
-- ESP32 (also TC001 and ESP32-S3 DIY): https://ang.blueforcer.de/esp32/ (spec `esp32/api/openapi.yaml`, index `esp32/search/search_index.json`, release notes `esp32/releases/`)
+- TC002: `<docs>/tc002/` (spec `tc002/api/openapi.yaml`, index `tc002/search/search_index.json`, release notes `tc002/releases/`)
+- ESP32 (also TC001 and ESP32-S3 DIY): `<docs>/esp32/` (spec `esp32/api/openapi.yaml`, index `esp32/search/search_index.json`, release notes `esp32/releases/`)
+
+`<docs>` is the documentation site of AWTRIX NG (linked from https://github.com/Blueforcer/awtrix-ng). During the closed beta it ran on a temporary domain, so do not hard-code a doc domain anywhere; ask the user for the current one.
 
 **A field that only one kind of device has must be optional in the types.** Examples: `clockFace` and `radioVolume` are TC002 only; `tempOffset`, `webPort` and the pins are ESP32 only. The ESP32 spec leaves out ESP32-S3 features (I²S pins, `pinAmpEnable`, PSRAM fields), but its reference pages still describe them, so they stay. Both devices use the 1.2.0 sound model (`file`/`rtttl`/`track` + `loop`, `stop` groups, `volume`); firmware 1.1.x is not supported for sound, notification sounds, sound settings and the gamepad.
 
