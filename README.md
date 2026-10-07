@@ -2,7 +2,7 @@
 
 Type-safe Node.js client for the [AWTRIX NG](https://github.com/Blueforcer/awtrix-ng) HTTP API v1, written in TypeScript on top of [axios](https://axios-http.com/).
 
-- Covers every documented route of the [AWTRIX NG HTTP API](https://blueforcer.github.io/awtrix-ng/) for the TC002 and ESP32
+- Covers every documented route of the AWTRIX NG HTTP API for the [TC002](https://blueforcer.github.io/awtrix-ng/tc002/reference/http/), [ESP32](https://blueforcer.github.io/awtrix-ng/esp32/reference/http/) and [ESP32-S3](https://blueforcer.github.io/awtrix-ng/esp32-s3/reference/http/)
 - Full type definitions for all payloads, responses and optional parameters
 - One error model: device errors, connection problems and invalid arguments are distinct classes
 - Client-side checks where the firmware would silently wrap values or a request can never succeed
@@ -19,7 +19,7 @@ Requires Node.js 22 or newer.
 
 Since 1.2.0 the [AWTRIX NG documentation](https://blueforcer.github.io/awtrix-ng/) is split per device: [TC002](https://blueforcer.github.io/awtrix-ng/tc002/), [ESP32](https://blueforcer.github.io/awtrix-ng/esp32/) and [ESP32-S3](https://blueforcer.github.io/awtrix-ng/esp32-s3/). The library covers all of them. Fields only one kind of device has are optional in the types, and routes a device does not have answer `404`. Sound, notification sounds, sound settings and the gamepad use the 1.2.0 format. **Firmware before 1.2.0 is not supported for these parts**; use 0.2.x for firmware 1.1.x.
 
-Changes compared with firmware 1.1.x and library 0.2.x (see the release notes of each device in the AWTRIX NG documentation):
+Changes compared with firmware 1.1.x and library 0.2.x (see the 1.2.2 release notes for the [TC002](https://blueforcer.github.io/awtrix-ng/tc002/releases/1.2.2/), [ESP32](https://blueforcer.github.io/awtrix-ng/esp32/releases/1.2.2/) and [ESP32-S3](https://blueforcer.github.io/awtrix-ng/esp32-s3/releases/1.2.2/)):
 
 - Sound: `audio.play()` takes a stored name, one sound object (`file`, `rtttl`, `song`, `speech`, `track` or `station`, plus `loop`) or a list of 1-4 alternatives. `audio.stop()` takes a group (`alert`, `app`, `radio`).
 - Notifications take the same sound in `sound`; `soundRtttl` and `soundLoop` are gone.
