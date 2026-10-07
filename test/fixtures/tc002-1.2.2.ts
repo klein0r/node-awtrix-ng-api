@@ -1,33 +1,34 @@
 /**
- * Real responses of an Ulanzi TC002 running AWTRIX NG 1.2.0, recorded 2026-10-05
- * (network names and addresses replaced). `satisfies` makes the typecheck fail when the
- * types drift from what the device sends, including unknown fields.
+ * Real responses of an Ulanzi TC002 running AWTRIX NG 1.2.2, recorded 2026-10-07
+ * (network names, addresses and device IDs replaced). `satisfies` makes the typecheck fail
+ * when the types drift from what the device sends, including unknown fields.
  */
 import type { AppInfo, AudioState, BuiltinAppConfig, Capabilities, DeviceState, DisplayState, GamepadState, MelodyList, Mp3List, MqttTlsState, OAuthList, Settings, SystemConfig, VoiceState } from '../../src/index.js';
 
 export const device = {
-  "version": "1.2.0",
-  "uid": "ccc4b277a755",
+  "version": "1.2.2",
+  "uid": "a4cf120b3c7d",
   "boardType": "tc002",
   "soc": "armv7l",
   "updateImage": "awtrix-ng-tc002.awup",
   "ipAddress": "192.168.1.50",
-  "hostname": "awtrixng-77a755",
-  "wifiRssi": -42,
-  "uptimeSeconds": 3197,
-  "freeHeapBytes": 13709312,
-  "minFreeHeapBytes": 13672448,
+  "macAddress": "A4:CF:12:0B:3C:7D",
+  "hostname": "awtrixng-0b3c7d",
+  "wifiRssi": -40,
+  "uptimeSeconds": 266,
+  "freeHeapBytes": 13467648,
+  "minFreeHeapBytes": 13422592,
   "scriptingRunning": true,
   "scriptHeapPool": "system",
-  "scriptHeapBudgetBytes": 4167680,
+  "scriptHeapBudgetBytes": 4194304,
   "resetReason": "poweron",
   "fps": 42,
-  "brightness": 141,
+  "brightness": 140,
   "batteryPercent": 0,
   "batteryVoltage": 0,
   "lowBattery": false,
   "matrixPower": true,
-  "currentApp": "Status",
+  "currentApp": "plasma",
   "indicators": [
     {
       "on": false,
@@ -61,15 +62,15 @@ export const device = {
     "lastError": null
   },
   "mqtt": {
-    "enabled": false,
-    "state": "disabled",
-    "host": "",
-    "endpoint": "",
+    "enabled": true,
+    "state": "connected",
+    "host": "192.168.1.10",
+    "endpoint": "192.168.1.10:1883",
     "attempts": 0,
     "retryInMs": 0,
-    "connects": 0,
+    "connects": 1,
     "error": null,
-    "lastError": null
+    "lastError": "noWifi"
   },
   "mirror": {
     "sharing": false,
@@ -80,14 +81,14 @@ export const device = {
   "usbPower": true,
   "update": {
     "state": "confirmed",
-    "release": "1.2.0-g8f8edce35de2-d17d1b80e1fc",
+    "release": "1.2.2-ga02f3ab66cd8-c701ad018299",
     "error": ""
   }
 } satisfies DeviceState;
 
 export const settings = {
   "autoBrightness": false,
-  "brightness": 141,
+  "brightness": 140,
   "autoTransition": true,
   "textColor": "#FFFFFF",
   "transitionEffect": "Rain",
@@ -116,8 +117,8 @@ export const settings = {
   "humidityColor": null,
   "temperatureColor": null,
   "batteryColor": null,
-  "volume": 90,
-  "radioVolume": 71,
+  "volume": 100,
+  "radioVolume": 65,
   "appVolume": 100,
   "alertVolume": 100,
   "saturation": 100,
@@ -127,7 +128,8 @@ export const settings = {
   "clockFace": "sheet",
   "musicSource": "auto",
   "calendarAnimation": true,
-  "bootSound": true,
+  "bootSound": false,
+  "enlargeApps": true,
   "scroll": {
     "mode": "wrap",
     "direction": "left",
@@ -165,7 +167,7 @@ export const settings = {
 
 export const display = {
   "power": true,
-  "brightness": 141,
+  "brightness": 140,
   "overlay": null,
   "overlaySettings": {
     "speed": 1,
@@ -177,22 +179,93 @@ export const display = {
 
 export const apps = [
   {
-    "name": "Status",
+    "name": "plasma",
     "enabled": true,
     "inLoop": true,
     "slot": 0,
+    "present": true,
+    "origin": "script",
+    "skipped": false,
+    "headless": false,
+    "ondemand": false,
+    "config": false,
+    "error": null,
+    "meta": {
+      "name": "Plasma",
+      "desc": "Classic rolling rainbow plasma, every pixel alive and shifting.",
+      "author": "Stipple",
+      "version": "1.0",
+      "icons": [],
+      "requires": [],
+      "needs": [],
+      "display": {
+        "width": 52,
+        "height": 16,
+        "fits": true
+      }
+    }
+  },
+  {
+    "name": "pvpower",
+    "enabled": true,
+    "inLoop": false,
+    "slot": 1,
+    "present": false,
+    "origin": null
+  },
+  {
+    "name": "Time",
+    "enabled": false,
+    "inLoop": false,
+    "slot": null,
+    "present": true,
+    "origin": "builtin",
+    "config": true
+  },
+  {
+    "name": "Status",
+    "enabled": false,
+    "inLoop": false,
+    "slot": null,
     "present": true,
     "origin": "builtin",
     "config": false
   },
   {
-    "name": "Time",
-    "enabled": true,
-    "inLoop": true,
-    "slot": 1,
+    "name": "flappy",
+    "enabled": false,
+    "inLoop": false,
+    "slot": null,
     "present": true,
-    "origin": "builtin",
-    "config": true
+    "origin": "script",
+    "skipped": false,
+    "headless": false,
+    "ondemand": false,
+    "config": true,
+    "error": null,
+    "meta": {
+      "name": "Flappy Pixel",
+      "desc": "One-button Flappy on the full panel: several pipes at once, a parallax skyline, a live score and a bird that actually flaps",
+      "author": "Galadril",
+      "version": "2.1",
+      "icons": [],
+      "requires": [],
+      "needs": [
+        {
+          "name": "audio.song",
+          "missing": false
+        },
+        {
+          "name": "audio.effect",
+          "missing": false
+        }
+      ],
+      "display": {
+        "width": 52,
+        "height": 16,
+        "fits": true
+      }
+    }
   }
 ] satisfies AppInfo[];
 
@@ -415,7 +488,8 @@ export const capabilities = {
     "big"
   ],
   "mqttTls": true,
-  "bootSound": true
+  "bootSound": true,
+  "enlargeApps": true
 } satisfies Capabilities;
 
 export const system = {
@@ -428,12 +502,12 @@ export const system = {
   "dns2": "",
   "wifiConnectTimeout": 15000,
   "wifiRoamRssi": 0,
-  "mqttEnabled": false,
-  "mqttHost": "",
+  "mqttEnabled": true,
+  "mqttHost": "192.168.1.10",
   "mqttPort": 1883,
-  "mqttUser": "",
-  "mqttPrefix": "",
-  "haDiscovery": false,
+  "mqttUser": "mqtt-user",
+  "mqttPrefix": "awtrixng1",
+  "haDiscovery": true,
   "haPrefix": "homeassistant",
   "ntpServer": "pool.ntp.org",
   "tz": "CET-1CEST,M3.5.0,M10.5.0/3",
@@ -502,13 +576,13 @@ export const audio = {
 export const mp3 = {
   "files": [
     {
-      "name": "awtrixNG.mp3",
-      "size": 123154
+      "name": "shine_ding.mp3",
+      "size": 56562
     }
   ],
   "scripts": [],
-  "usedBytes": 125749,
-  "totalBytes": 6908725
+  "usedBytes": 75337,
+  "totalBytes": 6895177
 } satisfies Mp3List;
 
 export const melodies = {
@@ -522,8 +596,8 @@ export const melodies = {
       "valid": true
     }
   ],
-  "usedBytes": 125749,
-  "totalBytes": 6908725
+  "usedBytes": 75337,
+  "totalBytes": 6895177
 } satisfies MelodyList;
 
 export const gamepad = {
@@ -548,15 +622,61 @@ export const gamepad = {
 
 export const voice = {
   "config": {
-    "enabled": false,
-    "url": "",
+    "enabled": true,
+    "url": "http://192.168.1.10:8123",
     "pipeline": "",
     "device": "",
-    "tokenSet": false
+    "tokenSet": true
   },
-  "state": "offline",
+  "state": "ready",
   "error": "",
-  "pipelines": []
+  "pipelines": [
+    {
+      "conversation_engine": "conversation.home_assistant",
+      "conversation_language": "en",
+      "language": "en",
+      "name": "Home Assistant",
+      "stt_engine": null,
+      "stt_language": null,
+      "tts_engine": "tts.home_assistant_cloud",
+      "tts_language": "en-US",
+      "tts_voice": "JennyNeural",
+      "wake_word_entity": null,
+      "wake_word_id": null,
+      "prefer_local_intents": false,
+      "id": "01j4rtkj9h20gxge71fm3ydd1k"
+    },
+    {
+      "conversation_engine": "conversation.home_assistant",
+      "conversation_language": "de",
+      "language": "de",
+      "name": "Home Assistant Cloud",
+      "stt_engine": "stt.home_assistant_cloud",
+      "stt_language": "de-DE",
+      "tts_engine": "tts.home_assistant_cloud",
+      "tts_language": "de-DE",
+      "tts_voice": "KatjaNeural",
+      "wake_word_entity": null,
+      "wake_word_id": null,
+      "prefer_local_intents": false,
+      "id": "01j6cg58tcnw52b1tq9yfm6w7w"
+    },
+    {
+      "conversation_engine": "conversation.chatgpt",
+      "conversation_language": "*",
+      "language": "de",
+      "name": "OpenAI",
+      "stt_engine": "stt.home_assistant_cloud",
+      "stt_language": "de-DE",
+      "tts_engine": "tts.home_assistant_cloud",
+      "tts_language": "de-DE",
+      "tts_voice": "KatjaNeural",
+      "wake_word_entity": null,
+      "wake_word_id": null,
+      "prefer_local_intents": true,
+      "id": "01jjsac37wdt7hf03184xxydc8"
+    }
+  ]
 } satisfies VoiceState;
 
 export const mqttTls = {

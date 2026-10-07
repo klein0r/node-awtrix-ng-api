@@ -65,11 +65,13 @@ When the docs change:
 - Read the release notes first.
 - Diff each device's spec against the previous snapshot of the same spec, field by field incl. nested keys, enums and required (a flattening diff, not a name check; that is how `voice.config.device` was found).
 - Check required/optional against both specs. The OpenAPI specs are incomplete: payload keys live only on `reference/payload/`, and some routes have at times been only in the route index of `reference/http/`. Compare both separately for each device.
-- `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.0.ts` and `test/fixtures/esp32-1.2.0.ts` (a TC001) hold real responses checked with `satisfies`. Refresh them from a device when the types change, and replace network names and addresses first.
+- `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.2.ts` and `test/fixtures/esp32-1.2.0.ts` (a TC001) hold real responses checked with `satisfies`. Refresh them from a device when the types change, and replace network names and addresses first.
 
 **Live tests on a real device: never call `device.sleep`, `reboot`, `factoryReset`, `settings.reset`, firmware update or restore.** A TC002 still answers `POST /api/v1/device/sleep` with `200` and restarts its runtime, although its docs do not list the route.
 
 Verified on a real ESP32 (TC001, 1.2.0): all read responses match the types; `speech`/`song`/`station` answer `503 unavailable`, TC002-only settings `422 unknown field`, and the gamepad, voice, OAuth and MQTT TLS routes `404`.
+
+Verified on a real TC002 (1.2.2): `macAddress`, `enlargeApps`, `apps.setEnabled`, `audio.renameMp3` (`404` for a missing MP3) and the new indicator rule (omitted `blinkMs`/`fadeMs` become `0`) match the docs; the settings have 46 keys.
 
 Verified on a real TC002 (1.2.0):
 - Every documented sound, gamepad (incl. phone sessions), built-in config, MQTT TLS, OAuth and voice behaviour matched, including the error messages.
