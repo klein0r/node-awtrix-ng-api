@@ -158,6 +158,16 @@ export class AudioApi extends ApiModule {
     });
   }
 
+  /**
+   * `POST /api/v1/audio/mp3/rename` - renames a stored MP3 in `/MP3` (1.2.2+). Names with or
+   * without `.mp3`. Rejects with `409 nameTaken` when an MP3 or melody of the new name exists.
+   * Sounds in a script's own folder cannot be renamed.
+   */
+  async renameMp3(from: string, to: string, options?: RequestOptions): Promise<OkResponse> {
+    const json = { from: normalizeMp3Name(from), to: normalizeMp3Name(to) };
+    return this.ok({ method: 'POST', path: '/api/v1/audio/mp3/rename', json, options });
+  }
+
   /** `DELETE /api/v1/audio/mp3/{name}` - `name` with or without `.mp3`. */
   async deleteMp3(name: string, options?: RequestOptions): Promise<OkResponse> {
     return this.ok({ method: 'DELETE', path: `/api/v1/audio/mp3/${segment(normalizeMp3Name(name))}`, options });

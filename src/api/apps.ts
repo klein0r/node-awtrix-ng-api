@@ -82,6 +82,17 @@ export class AppsApi extends ApiModule {
   }
 
   /**
+   * `PUT /api/v1/apps/{name}/enabled` - switches one app on or off; every other app stays as it
+   * is (1.2.2+). A switched-off app keeps its place in the order. The name may belong to an app
+   * that is not there yet. Rejects with `507` when the change is active but could not be saved.
+   */
+  async setEnabled(name: AppName, enabled: boolean, options?: RequestOptions): Promise<OkResponse> {
+    assertAppName(name);
+    if (typeof enabled !== 'boolean') throw new AwtrixValidationError('enabled', 'must be true or false');
+    return this.ok({ method: 'PUT', path: `/api/v1/apps/${segment(name)}/enabled`, json: enabled, options });
+  }
+
+  /**
    * `GET /api/v1/apps/builtin/{name}/config` - the settings a built-in app (Time, Date, ...)
    * offers on this device. `404` when the device has no such built-in app.
    */

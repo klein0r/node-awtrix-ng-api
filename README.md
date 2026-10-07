@@ -15,9 +15,9 @@ Requires Node.js 22 or newer.
 | | Version |
 |---|---|
 | AWTRIX NG HTTP API | v1 |
-| AWTRIX NG firmware | built against 1.2.0 for the Ulanzi TC002 and ESP32 (incl. TC001), verified on a TC002 running 1.2.0 |
+| AWTRIX NG firmware | built against 1.2.2 for the Ulanzi TC002, ESP32 (incl. TC001) and ESP32-S3; verified on a TC002 and a TC001 running 1.2.0 |
 
-Since 1.2.0 the [AWTRIX NG documentation](https://blueforcer.github.io/awtrix-ng/) is split per device (TC002 and ESP32). The library covers both. Fields only one kind of device has are optional in the types, and routes a device does not have answer `404`. Sound, notification sounds, sound settings and the gamepad use the 1.2.0 format. **Firmware before 1.2.0 is not supported for these parts**; use 0.2.x for firmware 1.1.x.
+Since 1.2.0 the [AWTRIX NG documentation](https://blueforcer.github.io/awtrix-ng/) is split per device: [TC002](https://blueforcer.github.io/awtrix-ng/tc002/), [ESP32](https://blueforcer.github.io/awtrix-ng/esp32/) and [ESP32-S3](https://blueforcer.github.io/awtrix-ng/esp32-s3/). The library covers all of them. Fields only one kind of device has are optional in the types, and routes a device does not have answer `404`. Sound, notification sounds, sound settings and the gamepad use the 1.2.0 format. **Firmware before 1.2.0 is not supported for these parts**; use 0.2.x for firmware 1.1.x.
 
 Changes compared with firmware 1.1.x and library 0.2.x (see the release notes of each device in the AWTRIX NG documentation):
 
@@ -28,6 +28,8 @@ Changes compared with firmware 1.1.x and library 0.2.x (see the release notes of
 - Melodies and MP3s can no longer share a name (`409 nameTaken`).
 - Gamepads use two slots: `gamepad.get()` lists both, `pair()` returns the slot, `forget(slot)`. A phone can play too: `gamepad.connectRemote()` / `disconnectRemote()`.
 - New: `audio.playClip()`, built-in app settings (`apps.getBuiltinConfig` / `updateBuiltinConfig`), MQTT over TLS, `files.renameIcon()`, OAuth sign-ins (`oauth`), `voice.update()` and `device.usbPower`.
+- New in 1.2.2: `apps.setEnabled(name, enabled)` switches one app on or off, `audio.renameMp3(from, to)`, `device.macAddress` and the TC002 setting `enlargeApps`.
+- Indicators: a command without `blinkMs` or `fadeMs` gives a steady light; send them with every command that should blink or fade.
 
 Also part of the TC002 firmware: region layouts (`layout`), data URL icons, fonts from `capabilities.fonts`, script data and sounds, Home Assistant Voice status and TC002 update packages (`.awup`).
 
@@ -106,11 +108,11 @@ The client groups the routes into namespaces. All methods return promises.
 | `device` | `get`, `version`, `capabilities`, `reboot`, `sleep`, `factoryReset`, `ping`, `waitForOnline` | `/api/v1/device`, `/api/v1/version`, `/api/v1/capabilities`, `/version` |
 | `settings` | `get`, `update`, `setBrightness`, `reset` | `/api/v1/settings` |
 | `display` | `get`, `update`, `setPower`, `setOverlay`, `clearOverlay`, `setMoodlight`, `disableMoodlight`, `getScreen` | `/api/v1/display` |
-| `apps` | `list`, `switchTo`, `next`, `previous`, `setOrder`, `disable`, `push`, `delete`, `getBuiltinConfig`, `updateBuiltinConfig` | `/api/v1/apps`, `/api/v1/apps/builtin/{name}/config` |
+| `apps` | `list`, `switchTo`, `next`, `previous`, `setOrder`, `disable`, `setEnabled`, `push`, `delete`, `getBuiltinConfig`, `updateBuiltinConfig` | `/api/v1/apps`, `/api/v1/apps/builtin/{name}/config` |
 | `scripts` | `getSource`, `install`, `updateIfUnchanged`, `delete`, `getConfig`, `updateConfig`, `getData`, `updateData`, `listSounds`, `uploadSound`, `deleteSound`, `deleteAllSounds`, `getShared` | `/api/v1/apps/script`, `/api/v1/apps/{name}/config`, `/api/v1/apps/{name}/data`, `/api/v1/scripts/shared` |
 | `notifications` | `send`, `dismiss`, `dismissByName` | `/api/v1/notifications` |
 | `indicators` | `set`, `clear` | `/api/v1/indicators/{1-3}` |
-| `audio` | `getState`, `play`, `playFile`, `playRtttl`, `playSong`, `speak`, `playTrack`, `playStation`, `playClip`, `stop`, `listMelodies`, `saveMelody`, `deleteMelody`, `listMp3`, `uploadMp3`, `deleteMp3`, `getStations`, `setStations` | `/api/v1/audio` |
+| `audio` | `getState`, `play`, `playFile`, `playRtttl`, `playSong`, `speak`, `playTrack`, `playStation`, `playClip`, `stop`, `listMelodies`, `saveMelody`, `deleteMelody`, `listMp3`, `uploadMp3`, `renameMp3`, `deleteMp3`, `getStations`, `setStations` | `/api/v1/audio` |
 | `system` | `get`, `getWithSecrets`, `update`, `scanWifi`, `waitForWifiScan`, `getLogs`, `getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`, `updateFirmware`, `restoreBackup` | `/api/v1/system`, `/api/v1/logs`, `/api/v1/mqtt/tls`, `/update`, `/api/v1/restore` |
 | `files` | `list`, `upload`, `uploadIcon`, `delete`, `download`, `renameIcon`, `listIconOrigins`, `setIconOrigin`, `deleteIconOrigin` | `/api/v1/files`, `/api/v1/icons/rename`, `/api/v1/icons/origins`, static assets |
 | `gamepad` | `get`, `pair`, `forget`, `connectRemote`, `disconnectRemote` | `/api/v1/gamepad` (TC002) |

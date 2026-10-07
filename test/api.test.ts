@@ -184,6 +184,17 @@ describe('apps', () => {
     expect(mock.requests).toHaveLength(0);
   });
 
+  it('switches one app on or off', async () => {
+    await client.apps.setEnabled('Time', false);
+    expectRequest('PUT', '/api/v1/apps/Time/enabled');
+    expect(mock.last.text).toBe('false');
+    expect(mock.last.headers['content-type']).toBe('application/json');
+    await client.apps.setEnabled('weather', true);
+    expect(mock.last.text).toBe('true');
+    await expect(client.apps.setEnabled('Time', 'yes' as never)).rejects.toThrow(/true or false/);
+    await expect(client.apps.setEnabled('bad name', true)).rejects.toBeInstanceOf(AwtrixValidationError);
+  });
+
   it('deletes apps', async () => {
     await client.apps.delete('weather');
     expectRequest('DELETE', '/api/v1/apps/weather');
@@ -369,6 +380,10 @@ describe('audio', () => {
     expect(mock.last.headers['content-type']).toMatch(/^multipart\/form-data; boundary=/);
     expect(mock.last.text).toContain('filename="ding.mp3"');
     expect(mock.last.text).toContain('ID3fake-mp3');
+
+    await client.audio.renameMp3('ding.mp3', 'bell');
+    expectRequest('POST', '/api/v1/audio/mp3/rename', { from: 'ding', to: 'bell' });
+    await expect(client.audio.renameMp3('ding', 'bad name')).rejects.toBeInstanceOf(AwtrixValidationError);
 
     await client.audio.deleteMp3('ding.mp3');
     expectRequest('DELETE', '/api/v1/audio/mp3/ding');

@@ -106,6 +106,8 @@ export interface DeviceState {
   /** The update file `POST /update` accepts, e.g. `firmware-awtrix-ng.bin` or `awtrix-ng-tc002.awup`; `""` where there is none. */
   updateImage?: string;
   ipAddress: string;
+  /** Since 1.2.2: the Wi-Fi MAC address, upper case with colons (e.g. `A4:CF:12:0B:3C:7D`). */
+  macAddress?: string;
   hostname: string;
   wifiRssi: number;
   uptimeSeconds: number;
@@ -220,9 +222,9 @@ export type IndicatorId = 1 | 2 | 3;
 interface IndicatorFields {
   /** Any color turns the indicator on; `0` or `null` turns it off but keeps the stored color. */
   color: ColorInput | null;
-  /** Blink period `0..65535` ms. Kept when omitted. */
+  /** Blink period `0..65535` ms. `0` when omitted, so send it with every command that should blink. */
   blinkMs: number;
-  /** Fade period `0..65535` ms. Kept when omitted. */
+  /** Fade period `0..65535` ms. `0` when omitted, so send it with every command that should fade. */
   fadeMs: number;
 }
 

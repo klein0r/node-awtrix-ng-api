@@ -315,6 +315,8 @@ export interface Capabilities {
   layout?: boolean;
   /** Present (and `true`) only while a phone can be a gamepad (TC002, scripting on). */
   gamepadRemote?: true;
+  /** Present (and `true`) only where pushed apps and notifications can be drawn at double size (TC002, 1.2.2+). */
+  enlargeApps?: true;
   /** Limits of region layouts. */
   layouts?: LayoutCapabilities;
 }

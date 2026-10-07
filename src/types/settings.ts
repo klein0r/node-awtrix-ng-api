@@ -130,6 +130,13 @@ export interface Settings {
   /** TC002 only. Default `auto`. */
   musicSource?: MusicSource;
 
+  /* --- Display --- */
+  /**
+   * TC002 only (`capabilities.enlargeApps`): pushed apps and notifications without a layout are
+   * drawn at double size, unless an icon is bigger than 26×8. Since 1.2.2.
+   */
+  enlargeApps?: boolean;
+
   /* --- Buttons --- */
   blockNavigation: boolean;
 }

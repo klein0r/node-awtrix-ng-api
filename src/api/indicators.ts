@@ -8,7 +8,8 @@ import { ApiModule } from './base.js';
 export class IndicatorsApi extends ApiModule {
   /**
    * `PUT /api/v1/indicators/{id}`. Only the presence of `color` changes on/off; `0`/`null`
-   * switches off but keeps the stored color. Omitted `blinkMs`/`fadeMs` keep their value.
+   * switches off but keeps the stored color. Omitted `blinkMs`/`fadeMs` are `0`, so a command
+   * without them gives a steady light.
    */
   async set(id: IndicatorId, update: IndicatorUpdate, options?: RequestOptions): Promise<OkResponse> {
     assertInteger(id, 'id', 1, 3);
