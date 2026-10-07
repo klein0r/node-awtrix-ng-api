@@ -1,39 +1,40 @@
 /**
- * Real responses of an Ulanzi TC001 (ESP32) running AWTRIX NG 1.2.0, recorded 2026-10-05
- * (network names and addresses replaced). `satisfies` makes the typecheck fail when the
- * types drift from what the device sends, including unknown fields.
+ * Real responses of an Ulanzi TC001 (ESP32) running AWTRIX NG 1.2.2, recorded 2026-10-07
+ * (network names, addresses and device IDs replaced). `satisfies` makes the typecheck fail
+ * when the types drift from what the device sends, including unknown fields.
  */
 import type { AppInfo, AudioState, BuiltinAppConfig, Capabilities, DeviceState, DisplayState, MelodyList, Mp3List, Settings, SystemConfig } from '../../src/index.js';
 
 export const device = {
-  "version": "1.2.0",
-  "uid": "80646fecd438",
+  "version": "1.2.2",
+  "uid": "a4cf120b3c7e",
   "boardType": "awtrixng",
   "soc": "esp32",
   "updateImage": "firmware-awtrix-ng.bin",
   "ipAddress": "192.168.1.60",
-  "hostname": "awtrixng-ecd438",
-  "wifiRssi": -45,
-  "uptimeSeconds": 491,
-  "freeHeapBytes": 105264,
-  "minFreeHeapBytes": 69016,
+  "macAddress": "A4:CF:12:0B:3C:7E",
+  "hostname": "awtrixng-0b3c7e",
+  "wifiRssi": -44,
+  "uptimeSeconds": 41,
+  "freeHeapBytes": 100796,
+  "minFreeHeapBytes": 65472,
   "largestFreeBlockBytes": 86004,
   "scriptingRunning": true,
   "scriptHeapPool": "internal",
   "scriptHeapBudgetBytes": 98304,
   "resetReason": "software",
   "fps": 42,
-  "brightness": 55,
-  "lightLevel": 49.9,
-  "ldrRaw": 2042,
-  "batteryPercent": 88,
-  "batteryVoltage": 4.1,
-  "batteryPinMillivolts": 2291,
+  "brightness": 62,
+  "lightLevel": 56.2,
+  "ldrRaw": 2301,
+  "batteryPercent": 41,
+  "batteryVoltage": 3.81,
+  "batteryPinMillivolts": 2126,
   "lowBattery": false,
-  "temperature": 23.9,
-  "humidity": 34.5,
+  "temperature": 13.1,
+  "humidity": 44.5,
   "matrixPower": true,
-  "currentApp": "Date",
+  "currentApp": "Battery",
   "indicators": [
     {
       "on": false,
@@ -161,7 +162,7 @@ export const settings = {
 
 export const display = {
   "power": true,
-  "brightness": 55,
+  "brightness": 62,
   "overlay": null,
   "overlaySettings": {
     "speed": 1,

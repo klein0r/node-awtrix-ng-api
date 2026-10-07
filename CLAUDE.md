@@ -65,9 +65,11 @@ When the docs change:
 - Read the release notes first.
 - Diff each device's spec against the previous snapshot of the same spec, field by field incl. nested keys, enums and required (a flattening diff, not a name check; that is how `voice.config.device` was found).
 - Check required/optional against both specs. The OpenAPI specs are incomplete: payload keys live only on `reference/payload/`, and some routes have at times been only in the route index of `reference/http/`. Compare both separately for each device.
-- `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.2.ts` and `test/fixtures/esp32-1.2.0.ts` (a TC001) hold real responses checked with `satisfies`. Refresh them from a device when the types change. Before committing, replace everything personal: Wi-Fi name, IP addresses (also a configured MQTT broker or Home Assistant URL), `macAddress`, `uid` and `hostname` (both derive from the MAC) and user names; then grep the fixture for the real values.
+- `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.2.ts` and `test/fixtures/esp32-1.2.2.ts` (a TC001) hold real responses checked with `satisfies`. Refresh them from a device when the types change. Before committing, replace everything personal: Wi-Fi name, IP addresses (also a configured MQTT broker or Home Assistant URL), `macAddress`, `uid` and `hostname` (both derive from the MAC) and user names; then grep the fixture for the real values.
 
 **Live tests on a real device: never call `device.sleep`, `reboot`, `factoryReset`, `settings.reset`, firmware update or restore.** A TC002 still answers `POST /api/v1/device/sleep` with `200` and restarts its runtime, although its docs do not list the route.
+
+Verified on a real ESP32 (TC001, 1.2.2): `macAddress`, `apps.setEnabled`, `audio.renameMp3` and the indicator rule behave as on the TC002; there is no `enlargeApps`.
 
 Verified on a real ESP32 (TC001, 1.2.0): all read responses match the types; `speech`/`song`/`station` answer `503 unavailable`, TC002-only settings `422 unknown field`, and the gamepad, voice, OAuth and MQTT TLS routes `404`.
 
