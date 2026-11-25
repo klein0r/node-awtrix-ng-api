@@ -60,8 +60,8 @@
     "axios": "^1.20.0"
   },
   "devDependencies": {
-    "@types/node": "^24.19.0",
+    "@types/node": "^24.19.2",
     "typescript": "~5.9.3",
-    "vitest": "^5.0.2"
+    "vitest": "^5.1.0"
   }
 }
