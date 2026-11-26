@@ -159,3 +159,32 @@ export interface Mp3List extends StorageUsage {
   /** One entry per script folder with at least one sound. */
   scripts: ScriptSoundGroup[];
 }
+
+/**
+ * `GET /api/v1/speech/voice` - the voice that speaks (TC002 with a speaker, 1.2.3+). A voice
+ * comes as a voice pack (`.atts`); one uploaded pack replaces the built-in English voice.
+ */
+export type SpeechVoice =
+  | {
+      /** The voice's name. */
+      name: string;
+      /** Its language, e.g. `en` or `de`. */
+      language: string;
+      /** The pack's version; `""` when it has none. */
+      version: string;
+      /** The pack's size in bytes. */
+      bytes: number;
+      /** `true`: an uploaded pack speaks; `false`: the built-in voice. */
+      uploaded: boolean;
+      /** The largest pack the clock takes. */
+      maxBytes: number;
+    }
+  | {
+      /** The clock has no voice; only `maxBytes` follows. */
+      name: null;
+      language?: never;
+      version?: never;
+      bytes?: never;
+      uploaded?: never;
+      maxBytes: number;
+    };

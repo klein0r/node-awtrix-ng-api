@@ -26,6 +26,7 @@ export type AwtrixErrorCode =
   | 'scanUnavailable'
   | 'notNewer'
   | 'updateBusy'
+  | 'voiceUnavailable'
   | 'payloadTooLarge'
   | 'insufficientMemory'
   | 'unsupportedMediaType'

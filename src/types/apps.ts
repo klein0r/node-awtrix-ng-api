@@ -156,8 +156,10 @@ export interface ScriptConfigBoolField extends ScriptConfigFieldBase {
 
 export interface ScriptConfigTextField extends ScriptConfigFieldBase {
   type: 'text';
-  /** Longest value accepted, at most 256. */
+  /** Longest value accepted in characters, at most 256. */
   maxlen?: number;
+  /** Gray text for an empty box, like an HTML `placeholder`. Never a value (1.2.3+). */
+  hint?: string;
   default: string;
   value: string;
 }
@@ -165,6 +167,8 @@ export interface ScriptConfigTextField extends ScriptConfigFieldBase {
 export interface ScriptConfigNumberField extends ScriptConfigFieldBase {
   type: 'number' | 'slider';
   unit?: string;
+  /** Gray text for an empty `number` box, like an HTML `placeholder`. Never a value (1.2.3+). */
+  hint?: string;
   min?: number;
   max?: number;
   step?: number;

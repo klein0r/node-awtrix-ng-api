@@ -15,11 +15,11 @@ Requires Node.js 22 or newer.
 | | Version |
 |---|---|
 | AWTRIX NG HTTP API | v1 |
-| AWTRIX NG firmware | built against 1.2.2 for the Ulanzi TC002, ESP32 (incl. TC001) and ESP32-S3; verified on a TC002 and a TC001 running 1.2.0 |
+| AWTRIX NG firmware | built against 1.2.3 for the Ulanzi TC002, ESP32 (incl. TC001) and ESP32-S3; verified on a TC002 and a TC001 running 1.2.3 |
 
 Since 1.2.0 the [AWTRIX NG documentation](https://blueforcer.github.io/awtrix-ng/) is split per device: [TC002](https://blueforcer.github.io/awtrix-ng/tc002/), [ESP32](https://blueforcer.github.io/awtrix-ng/esp32/) and [ESP32-S3](https://blueforcer.github.io/awtrix-ng/esp32-s3/). The library covers all of them. Fields only one kind of device has are optional in the types, and routes a device does not have answer `404`. Sound, notification sounds, sound settings and the gamepad use the 1.2.0 format. **Firmware before 1.2.0 is not supported for these parts**; use 0.2.x for firmware 1.1.x.
 
-Changes compared with firmware 1.1.x and library 0.2.x (see the 1.2.2 release notes for the [TC002](https://blueforcer.github.io/awtrix-ng/tc002/releases/1.2.2/), [ESP32](https://blueforcer.github.io/awtrix-ng/esp32/releases/1.2.2/) and [ESP32-S3](https://blueforcer.github.io/awtrix-ng/esp32-s3/releases/1.2.2/)):
+Changes compared with firmware 1.1.x and library 0.2.x (see the 1.2.3 release notes for the [TC002](https://blueforcer.github.io/awtrix-ng/tc002/releases/1.2.3/), [ESP32](https://blueforcer.github.io/awtrix-ng/esp32/releases/1.2.3/) and [ESP32-S3](https://blueforcer.github.io/awtrix-ng/esp32-s3/releases/1.2.3/)):
 
 - Sound: `audio.play()` takes a stored name, one sound object (`file`, `rtttl`, `song`, `speech`, `track` or `station`, plus `loop`) or a list of 1-4 alternatives. `audio.stop()` takes a group (`alert`, `app`, `radio`).
 - Notifications take the same sound in `sound`; `soundRtttl` and `soundLoop` are gone.
@@ -29,11 +29,12 @@ Changes compared with firmware 1.1.x and library 0.2.x (see the 1.2.2 release no
 - Gamepads use two slots: `gamepad.get()` lists both, `pair()` returns the slot, `forget(slot)`. A phone can play too: `gamepad.connectRemote()` / `disconnectRemote()`.
 - New: `audio.playClip()`, built-in app settings (`apps.getBuiltinConfig` / `updateBuiltinConfig`), MQTT over TLS, `files.renameIcon()`, OAuth sign-ins (`oauth`), `voice.update()` and `device.usbPower`.
 - New in 1.2.2: `apps.setEnabled(name, enabled)` switches one app on or off, `audio.renameMp3(from, to)`, `device.macAddress` and the TC002 setting `enlargeApps`.
+- New in 1.2.3 (TC002): the voice assistant can be Home Assistant or an app (`voice.update({ assistant: 'app:<name>' })`), with the "Hey AWTRIX" wake word (`wakeWord`, `wakeSensitivity`) and `voice.start()`; voice packs (`audio.getSpeechVoice`, `uploadVoicePack`, `removeVoicePack`); API keys of scripts (`secrets`); the "Help AWTRIX" answer (`system.getActivation` / `setActivation`); `hint` on script setting fields. The new `voice` fields are optional, so 1.2.2 answers still fit the types.
 - Indicators: a command without `blinkMs` or `fadeMs` gives a steady light; send them with every command that should blink or fade.
 
 Also part of the TC002 firmware: region layouts (`layout`), data URL icons, fonts from `capabilities.fonts`, script data and sounds, Home Assistant Voice status and TC002 update packages (`.awup`).
 
-On fixed hardware such as the TC002, `system.get()` omits the panel and pin fields, so they are optional in `SystemConfig`. The OAuth and voice write routes accept requests only as the device's own web UI sends them; the client adds the documented `X-Awtrix-OAuth` / `X-Awtrix-Voice` and `Origin` headers.
+On fixed hardware such as the TC002, `system.get()` omits the panel and pin fields, so they are optional in `SystemConfig`. The OAuth, voice and API key write routes accept requests only as the device's own web UI sends them; the client adds the documented `X-Awtrix-OAuth` / `X-Awtrix-Voice` / `X-Awtrix-Secret` and `Origin` headers.
 
 You can read the versions at runtime:
 
@@ -112,12 +113,13 @@ The client groups the routes into namespaces. All methods return promises.
 | `scripts` | `getSource`, `install`, `updateIfUnchanged`, `delete`, `getConfig`, `updateConfig`, `getData`, `updateData`, `listSounds`, `uploadSound`, `deleteSound`, `deleteAllSounds`, `getShared` | `/api/v1/apps/script`, `/api/v1/apps/{name}/config`, `/api/v1/apps/{name}/data`, `/api/v1/scripts/shared` |
 | `notifications` | `send`, `dismiss`, `dismissByName` | `/api/v1/notifications` |
 | `indicators` | `set`, `clear` | `/api/v1/indicators/{1-3}` |
-| `audio` | `getState`, `play`, `playFile`, `playRtttl`, `playSong`, `speak`, `playTrack`, `playStation`, `playClip`, `stop`, `listMelodies`, `saveMelody`, `deleteMelody`, `listMp3`, `uploadMp3`, `renameMp3`, `deleteMp3`, `getStations`, `setStations` | `/api/v1/audio` |
-| `system` | `get`, `getWithSecrets`, `update`, `scanWifi`, `waitForWifiScan`, `getLogs`, `getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`, `updateFirmware`, `restoreBackup` | `/api/v1/system`, `/api/v1/logs`, `/api/v1/mqtt/tls`, `/update`, `/api/v1/restore` |
+| `audio` | `getState`, `play`, `playFile`, `playRtttl`, `playSong`, `speak`, `playTrack`, `playStation`, `playClip`, `stop`, `listMelodies`, `saveMelody`, `deleteMelody`, `listMp3`, `uploadMp3`, `renameMp3`, `deleteMp3`, `getStations`, `setStations`, `getSpeechVoice`, `uploadVoicePack`, `removeVoicePack` | `/api/v1/audio`, `/api/v1/speech/voice` (TC002) |
+| `system` | `get`, `getWithSecrets`, `update`, `scanWifi`, `waitForWifiScan`, `getLogs`, `getMqttTls`, `setMqttTlsCa`, `deleteMqttTlsCa`, `getActivation`, `setActivation`, `updateFirmware`, `restoreBackup` | `/api/v1/system`, `/api/v1/logs`, `/api/v1/mqtt/tls`, `/api/v1/activation` (TC002), `/update`, `/api/v1/restore` |
 | `files` | `list`, `upload`, `uploadIcon`, `delete`, `download`, `renameIcon`, `listIconOrigins`, `setIconOrigin`, `deleteIconOrigin` | `/api/v1/files`, `/api/v1/icons/rename`, `/api/v1/icons/origins`, static assets |
 | `gamepad` | `get`, `pair`, `forget`, `connectRemote`, `disconnectRemote` | `/api/v1/gamepad` (TC002) |
-| `voice` | `get`, `update` | `/api/v1/voice` (TC002) |
+| `voice` | `get`, `update`, `start` | `/api/v1/voice`, `/api/v1/voice/start` (TC002) |
 | `oauth` | `list`, `get`, `setCredentials`, `startSignIn`, `finishSignIn`, `signOut` | `/api/v1/oauth` (TC002) |
+| `secrets` | `list`, `get`, `set`, `delete` | `/api/v1/secrets` (TC002) |
 
 ### Examples
 

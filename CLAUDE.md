@@ -66,9 +66,13 @@ When the docs change:
 - Read the release notes first.
 - Diff each device's spec against the previous snapshot of the same spec, field by field incl. nested keys, enums and required (a flattening diff, not a name check; that is how `voice.config.device` was found).
 - Check required/optional against both specs. The OpenAPI specs are incomplete: payload keys live only on `reference/payload/`, and some routes have at times been only in the route index of `reference/http/`. Compare both separately for each device.
-- `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.2.ts` and `test/fixtures/esp32-1.2.2.ts` (a TC001) hold real responses checked with `satisfies`. Refresh them from a device when the types change. Before committing, replace everything personal: Wi-Fi name, IP addresses (also a configured MQTT broker or Home Assistant URL), `macAddress`, `uid` and `hostname` (both derive from the MAC) and user names; then grep the fixture for the real values.
+- `test/tc002.test.ts` covers TC002-only routes. `test/fixtures/tc002-1.2.3.ts` and `test/fixtures/esp32-1.2.3.ts` (a TC001) hold real responses checked with `satisfies`. Refresh them from a device when the types change. Before committing, replace everything personal: Wi-Fi name, IP addresses (also a configured MQTT broker or Home Assistant URL), `macAddress`, `uid` and `hostname` (both derive from the MAC) and user names; then grep the fixture for the real values.
 
 **Live tests on a real device: never call `device.sleep`, `reboot`, `factoryReset`, `settings.reset`, firmware update or restore.** A TC002 still answers `POST /api/v1/device/sleep` with `200` and restarts its runtime, although its docs do not list the route.
+
+Verified on a real TC002 (1.2.3): all read responses match the types (settings still 46 keys); `voice` (assistant `off`/`ha`/`app:<name>`, `enabled: true` sets `ha`, `off` keeps URL and token, a missing app gives `error: appMissing`), `voice.start()` (`403` without the web UI headers, `409 voiceUnavailable` while off), `speech/voice` (`400 validationFailed` "not an ATTS file"), `activation` (`422` for a non-boolean) and `secrets` (`404 no @secret line` before `403`/`405`) match the docs. Never send a valid `activation` answer in live tests: `true` reports the clock to the AWTRIX Hub, and only a factory reset brings back `null`. `voice.start()` with a ready assistant really starts listening.
+
+Verified on a real ESP32 (TC001, 1.2.3): all read responses are unchanged from 1.2.2 (41 settings keys, same capabilities); `voice`, `voice/start`, `speech/voice`, `activation` and `secrets` answer `404`; TC002-only settings `422 unknown field`.
 
 Verified on a real ESP32 (TC001, 1.2.2): `macAddress`, `apps.setEnabled`, `audio.renameMp3` and the indicator rule behave as on the TC002; there is no `enlargeApps`.
 
@@ -78,7 +82,7 @@ Verified on a real TC002 (1.2.2): `macAddress`, `enlargeApps`, `apps.setEnabled`
 
 Verified on a real TC002 (1.2.0):
 - Every documented sound, gamepad (incl. phone sessions), built-in config, MQTT TLS, OAuth and voice behaviour matched, including the error messages.
-- The OAuth and voice write routes answer `403 forbiddenOrigin` unless the request carries `X-Awtrix-OAuth: 1` / `X-Awtrix-Voice: 1` plus an `Origin` naming the device. The docs show exactly this for API clients (`ApiModule.webUiHeaders()`). OAuth checks that the script exists before the origin.
+- The OAuth and voice write routes answer `403 forbiddenOrigin` unless the request carries `X-Awtrix-OAuth: 1` / `X-Awtrix-Voice: 1` (since 1.2.3 also `X-Awtrix-Secret: 1` for API keys) plus an `Origin` naming the device. The docs show exactly this for API clients (`ApiModule.webUiHeaders()`). OAuth checks that the script exists before the origin.
 - `textCenter` is not documented. The device still accepts it without checking its type, but it is not typed; `textAlign` replaces it.
 - The script source upload accepts `Content-Type: text/plain`. The OpenAPI claim of `415` is wrong.
 - Firmware 1.1.x accepted `PUT /api/v1/apps/pushed/next` (a reserved name), and such an app could then not be deleted (`DELETE /api/v1/apps/next` is `405`). 1.2.0 answers `400 invalidName`. Keep the client-side reserved-name check.

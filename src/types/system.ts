@@ -293,8 +293,15 @@ export interface Capabilities {
   ble?: true;
   /** Present (and `true`) only where a Bluetooth gamepad can be paired (TC002). */
   gamepad?: true;
-  /** Present (and `true`) only where Home Assistant Voice can be set up (TC002). */
+  /**
+   * Present (and `true`) only where the voice assistant can be set up (TC002). Also the
+   * `@needs` name of `import voice` in scripts.
+   */
   voice?: true;
+  /** Present (and `true`) only while scripts can keep API keys, which needs scripting on (TC002, 1.2.3+). `/api/v1/secrets` exists. */
+  secret?: true;
+  /** Present (and `true`) only where the web UI asks "Help AWTRIX" (TC002, 1.2.3+). `/api/v1/activation` exists. */
+  activation?: true;
   /** Active dimensions and accepted panel geometry. */
   display?: DisplayCapabilities;
   /** Scripts and music visualizations can hear the microphone (TC002). */
@@ -404,10 +411,28 @@ export interface MqttTlsState {
 
 export type VoiceConnectionState = 'offline' | 'connecting' | 'ready' | 'starting' | 'listening' | 'processing' | 'speaking' | 'error';
 
+/**
+ * Who answers the knob, the wake word, MQTT and `voice.start()`: `off` for nobody, `ha` for
+ * Home Assistant, `app:<name>` for an installed app with an `on_assistant` method (1.2.3+).
+ */
+export type VoiceAssistant = 'off' | 'ha' | `app:${string}`;
+
+/** How easily the clock hears "Hey AWTRIX" (1.2.3+). */
+export type WakeSensitivity = 'low' | 'normal' | 'high';
+
 /** `POST /api/v1/voice` body. Omitted fields keep their value. */
 export interface VoiceUpdate {
-  /** `true` needs an address and a token. `false` closes the connection to Home Assistant. */
+  /**
+   * `off` (the default), `ha` or `app:<name>` (1.2.3+). With an app or `off` the clock keeps no
+   * connection to Home Assistant; `off` keeps address, token, pipeline and device.
+   */
+  assistant?: VoiceAssistant;
+  /** `false` sets `assistant` to `off`, `true` to `ha`. `assistant` counts when both are sent. */
   enabled?: boolean;
+  /** `true`: saying "Hey AWTRIX" starts the assistant while it is ready (1.2.3+). */
+  wakeWord?: boolean;
+  /** `low` (fewer false starts), `normal` (default) or `high` (1.2.3+). */
+  wakeSensitivity?: WakeSensitivity;
   /** Home Assistant origin, e.g. `http://homeassistant.local:8123`, at most 512 characters. Send the token again after changing it. */
   url?: string;
   /** Assist pipeline ID, at most 128 characters; `""` for the default. */
@@ -420,10 +445,20 @@ export interface VoiceUpdate {
   clearToken?: true;
 }
 
-/** `GET /api/v1/voice` - Home Assistant Voice settings and connection. */
+/**
+ * `GET /api/v1/voice` - voice assistant settings and whether it is ready. The fields marked
+ * 1.2.3+ are missing on older firmware.
+ */
 export interface VoiceState {
   config: {
+    /** `true` while `assistant` is `ha`. */
     enabled: boolean;
+    /** Saying "Hey AWTRIX" starts the assistant (1.2.3+). */
+    wakeWord?: boolean;
+    /** How easily the clock hears the wake word (1.2.3+). */
+    wakeSensitivity?: LooseString<WakeSensitivity>;
+    /** Who answers: `off`, `ha` or `app:<name>` (1.2.3+). */
+    assistant?: VoiceAssistant;
     /** Home Assistant address; `""` when none is set. */
     url: string;
     /** Assist pipeline ID; `""` for the default. */
@@ -433,9 +468,27 @@ export interface VoiceState {
     /** Whether a token is stored. The token itself is never returned. */
     tokenSet: boolean;
   };
+  /** With `ha` the connection state; with an app `ready` or `error`; with `off`, `offline`. */
   state: LooseString<VoiceConnectionState>;
-  /** Why the last attempt failed; `""` when all is well. */
+  /**
+   * What stops the assistant now (e.g. `tokenRejected`, `appMissing`, `appOff`, `appBroken`);
+   * `""` when nothing does. Before 1.2.3: why the last attempt failed.
+   */
   error: string;
+  /** Why the last request failed (e.g. `nothingUnderstood`); the assistant stays ready. `""` otherwise (1.2.3+). */
+  lastError?: string;
+  /** The clock can hear "Hey AWTRIX"; when `false`, `config.wakeWord` does nothing (1.2.3+). */
+  wakeWordAvailable?: boolean;
+  /** The clock listens for "Hey AWTRIX" right now (1.2.3+). */
+  wakeListening?: boolean;
+  /** Installed apps that can be the assistant, disabled ones included (1.2.3+). */
+  assistantApps?: string[];
   /** Home Assistant's Assist pipelines once connected. */
   pipelines: Record<string, unknown>[];
+}
+
+/** `GET` / `PUT /api/v1/activation` - the answer to "Help AWTRIX" (TC002, 1.2.3+). */
+export interface Activation {
+  /** `true`: the clock may be counted; `false`: it may not; `null` while unanswered. */
+  consent: boolean | null;
 }

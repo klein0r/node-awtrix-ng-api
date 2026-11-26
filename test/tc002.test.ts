@@ -168,6 +168,111 @@ describe('OAuth and voice writes', () => {
     expect(mock.last.headers.origin).toBe(`http://${mock.host}`);
     await expect(client.voice.update({ device: 'not valid!' })).rejects.toThrow(/device/);
   });
+
+  it('chooses the assistant and the wake word (1.2.3)', async () => {
+    await client.voice.update({ assistant: 'app:LumenAssistant', wakeWord: true, wakeSensitivity: 'high' });
+    expectRequest('POST', '/api/v1/voice', { assistant: 'app:LumenAssistant', wakeWord: true, wakeSensitivity: 'high' });
+
+    for (const assistant of ['app:next', 'app:', 'app:bad name', 'homeassistant']) {
+      const error = await client.voice.update({ assistant: assistant as 'off' }).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(AwtrixValidationError);
+      expect(error).toMatchObject({ field: 'assistant' });
+    }
+    expect(mock.requests).toHaveLength(1);
+  });
+
+  it('starts the assistant with the web UI headers (1.2.3)', async () => {
+    await client.voice.start();
+    expectRequest('POST', '/api/v1/voice/start');
+    expect(mock.last.body).toHaveLength(0);
+    expect(mock.last.headers['content-type']).toBeUndefined();
+    expect(mock.last.headers['x-awtrix-voice']).toBe('1');
+    expect(mock.last.headers.origin).toBe(`http://${mock.host}`);
+
+    mock.reply({ status: 409, body: { error: { code: 'voiceUnavailable', message: 'assistant not ready' } } });
+    await expect(client.voice.start()).rejects.toMatchObject({ status: 409, code: 'voiceUnavailable' });
+  });
+});
+
+describe('API keys (1.2.3)', () => {
+  it('lists and reads the keys', async () => {
+    mock.reply({ body: { apps: ['LumenAssistant'] } });
+    expect(await client.secrets.list()).toEqual({ apps: ['LumenAssistant'] });
+    expectRequest('GET', '/api/v1/secrets');
+
+    const keys = { keys: [{ key: 'key', label: 'API key', help: '', set: true, hosts: ['api.openai.com'] }] };
+    mock.reply({ body: keys });
+    expect(await client.secrets.get('LumenAssistant')).toEqual(keys);
+    expectRequest('GET', '/api/v1/secrets/LumenAssistant');
+  });
+
+  it('saves and erases keys with the web UI headers', async () => {
+    await client.secrets.set('LumenAssistant', { key: 'sk-123', other: '' });
+    expectRequest('PUT', '/api/v1/secrets/LumenAssistant', { key: 'sk-123', other: '' });
+    expect(mock.last.headers['x-awtrix-secret']).toBe('1');
+    expect(mock.last.headers.origin).toBe(`http://${mock.host}`);
+
+    await client.secrets.delete('LumenAssistant', 'key');
+    expectRequest('DELETE', '/api/v1/secrets/LumenAssistant/key');
+    expect(mock.last.headers['x-awtrix-secret']).toBe('1');
+  });
+
+  it('refuses invalid names, keys and values before sending', async () => {
+    await expect(client.secrets.get('next')).rejects.toMatchObject({ field: 'name' });
+    await expect(client.secrets.delete('Lumen', '1key')).rejects.toMatchObject({ field: 'key' });
+    await expect(client.secrets.delete('Lumen', '../x')).rejects.toMatchObject({ field: 'key' });
+    await expect(client.secrets.set('Lumen', { key: 42 as unknown as string })).rejects.toMatchObject({ field: 'key' });
+    await expect(client.secrets.set('Lumen', null as unknown as Record<string, string>)).rejects.toMatchObject({ field: 'values' });
+    expect(mock.requests).toHaveLength(0);
+  });
+});
+
+describe('speech voice packs (1.2.3)', () => {
+  const voice = { name: 'Conny', language: 'en', version: '1', bytes: 1189344, uploaded: false, maxBytes: 2000000 };
+
+  it('reads, uploads and removes the voice pack', async () => {
+    mock.reply({ body: voice });
+    expect(await client.audio.getSpeechVoice()).toEqual(voice);
+    expectRequest('GET', '/api/v1/speech/voice');
+
+    mock.reply({ body: { ...voice, name: 'Hans', language: 'de', uploaded: true } });
+    const pack = Buffer.from('ATTS voice pack');
+    expect((await client.audio.uploadVoicePack(pack)).uploaded).toBe(true);
+    expectRequest('POST', '/api/v1/speech/voice');
+    expect(mock.last.headers['content-type']).toMatch(/^multipart\/form-data/);
+    expect(mock.last.text).toContain('name="voice"; filename="voice.atts"');
+    expect(mock.last.body.includes(pack)).toBe(true);
+
+    mock.reply({ body: voice });
+    expect((await client.audio.removeVoicePack()).uploaded).toBe(false);
+    expectRequest('DELETE', '/api/v1/speech/voice');
+  });
+
+  it('narrows a clock without a voice', async () => {
+    mock.reply({ body: { name: null, maxBytes: 2000000 } });
+    const result = await client.audio.getSpeechVoice();
+    expect(result).toEqual({ name: null, maxBytes: 2000000 });
+    expect(result.uploaded).toBeUndefined();
+    if (result.name !== null) {
+      const language: string = result.language;
+      expect(language).toBeDefined();
+    }
+  });
+});
+
+describe('Help AWTRIX (1.2.3)', () => {
+  it('reads and answers the question', async () => {
+    mock.reply({ body: { consent: null } });
+    expect(await client.system.getActivation()).toEqual({ consent: null });
+    expectRequest('GET', '/api/v1/activation');
+
+    mock.reply({ body: { consent: false } });
+    expect(await client.system.setActivation(false)).toEqual({ consent: false });
+    expectRequest('PUT', '/api/v1/activation', { consent: false });
+
+    await expect(client.system.setActivation('yes' as unknown as boolean)).rejects.toMatchObject({ field: 'consent' });
+    expect(mock.requests).toHaveLength(2);
+  });
 });
 
 describe('built-in app settings', () => {

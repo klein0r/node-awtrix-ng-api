@@ -24,7 +24,7 @@ export abstract class ApiModule {
 
   /**
    * The headers the device's own web UI sends, which routes that change credentials (OAuth,
-   * Home Assistant Voice) require: the route's marker header plus an `Origin` naming the device.
+   * voice assistant, API keys) require: the route's marker header plus an `Origin` naming the device.
    */
   protected webUiHeaders(marker: string): Record<string, string> {
     return { [marker]: '1', Origin: new URL(this.http.baseUrl).origin };

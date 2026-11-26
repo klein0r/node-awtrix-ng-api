@@ -10,3 +10,4 @@ export * from './system.js';
 export * from './files.js';
 export * from './firmware.js';
 export * from './oauth.js';
+export * from './secrets.js';

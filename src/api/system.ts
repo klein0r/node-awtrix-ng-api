@@ -3,6 +3,7 @@ import { delay, type RequestOptions } from '../http.js';
 import type { OkResponse } from '../types/common.js';
 import type { FirmwareUpdateResult, RestoreResult, UploadContent } from '../types/files.js';
 import type {
+  Activation,
   LogChunk,
   MqttTlsState,
   SystemConfig,
@@ -109,6 +110,23 @@ export class SystemApi extends ApiModule {
   /** `DELETE /api/v1/mqtt/tls/ca` - back to public CAs and the trusted fingerprint. */
   async deleteMqttTlsCa(options?: RequestOptions): Promise<MqttTlsState> {
     return this.json({ method: 'DELETE', path: '/api/v1/mqtt/tls/ca', options });
+  }
+
+  /* --- Help AWTRIX (TC002, capabilities.activation, 1.2.3+) --- */
+
+  /** `GET /api/v1/activation` - whether this clock may be counted; `consent: null` while unanswered. */
+  async getActivation(options?: RequestOptions): Promise<Activation> {
+    return this.json(this.read('/api/v1/activation', options));
+  }
+
+  /**
+   * `PUT /api/v1/activation` - answers "Help AWTRIX". With `true` the clock reports to the
+   * AWTRIX Hub once, as soon as it is online; with `false` it does not, and a report not sent
+   * yet is stopped. Only a factory reset brings back the unanswered state.
+   */
+  async setActivation(consent: boolean, options?: RequestOptions): Promise<Activation> {
+    if (typeof consent !== 'boolean') throw new AwtrixValidationError('consent', 'must be true or false');
+    return this.json({ method: 'PUT', path: '/api/v1/activation', json: { consent }, options });
   }
 
   /**

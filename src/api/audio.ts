@@ -1,6 +1,6 @@
 import type { RequestOptions } from '../http.js';
 import { AwtrixValidationError } from '../errors.js';
-import type { AudioGroup, AudioPlayRequest, AudioState, MelodyList, MelodySaveResult, Mp3List, RadioStation } from '../types/audio.js';
+import type { AudioGroup, AudioPlayRequest, AudioState, MelodyList, MelodySaveResult, Mp3List, RadioStation, SpeechVoice } from '../types/audio.js';
 import type { OkResponse } from '../types/common.js';
 import type { UploadContent } from '../types/files.js';
 import { assertMelodyName, assertNonEmptyString, assertSound, normalizeMp3Name, segment } from '../validation.js';
@@ -156,6 +156,33 @@ export class AudioApi extends ApiModule {
       body: toFormData('file', content, fileName, 'audio/mpeg'),
       options: { timeout: UPLOAD_TIMEOUT, ...options },
     });
+  }
+
+  /**
+   * `GET /api/v1/speech/voice` (TC002 with a speaker, 1.2.3+) - the voice that speaks. `404`
+   * on devices without speech.
+   */
+  async getSpeechVoice(options?: RequestOptions): Promise<SpeechVoice> {
+    return this.json(this.read('/api/v1/speech/voice', options));
+  }
+
+  /**
+   * `POST /api/v1/speech/voice` (1.2.3+) - uploads a voice pack (`.atts`, at most
+   * `maxBytes`). It replaces the pack uploaded before and speaks from the next speech on.
+   * Rejects with `400 validationFailed` for a file that is no usable voice pack.
+   */
+  async uploadVoicePack(content: UploadContent, options?: RequestOptions): Promise<SpeechVoice> {
+    return this.json({
+      method: 'POST',
+      path: '/api/v1/speech/voice',
+      body: toFormData('voice', content, 'voice.atts', 'application/octet-stream'),
+      options: { timeout: UPLOAD_TIMEOUT, ...options },
+    });
+  }
+
+  /** `DELETE /api/v1/speech/voice` (1.2.3+) - removes the uploaded pack; the built-in voice speaks again. */
+  async removeVoicePack(options?: RequestOptions): Promise<SpeechVoice> {
+    return this.json({ method: 'DELETE', path: '/api/v1/speech/voice', options });
   }
 
   /**

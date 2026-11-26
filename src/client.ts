@@ -8,6 +8,7 @@ import { IndicatorsApi } from './api/indicators.js';
 import { NotificationsApi } from './api/notifications.js';
 import { OAuthApi } from './api/oauth.js';
 import { ScriptsApi } from './api/scripts.js';
+import { SecretsApi } from './api/secrets.js';
 import { SettingsApi } from './api/settings.js';
 import { SystemApi } from './api/system.js';
 import { VoiceApi } from './api/voice.js';
@@ -51,10 +52,12 @@ export class AwtrixClient {
   readonly files: FilesApi;
   /** Bluetooth gamepads in two slots (TC002). */
   readonly gamepad: GamepadApi;
-  /** Home Assistant Voice settings and status (TC002). */
+  /** Voice assistant settings, status and start (TC002). */
   readonly voice: VoiceApi;
   /** Script sign-ins to services via OAuth (TC002). */
   readonly oauth: OAuthApi;
+  /** API keys of scripts (TC002, 1.2.3+). */
+  readonly secrets: SecretsApi;
 
   constructor(options: AwtrixClientOptions | string) {
     const transport = new HttpTransport(typeof options === 'string' ? { host: options } : options);
@@ -72,5 +75,6 @@ export class AwtrixClient {
     this.gamepad = new GamepadApi(transport);
     this.voice = new VoiceApi(transport);
     this.oauth = new OAuthApi(transport);
+    this.secrets = new SecretsApi(transport);
   }
 }
