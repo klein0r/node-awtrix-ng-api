@@ -32,6 +32,7 @@ TypeScript is pinned to `~5.9`. TypeScript 7 removed `moduleResolution: Node10`,
 - `src/types/*.ts` – all request and response types, re-exported through `types/index.ts` and `src/index.ts`.
 - `src/validation.ts` – client-side argument checks that throw `AwtrixValidationError`.
 - `src/errors.ts` – error hierarchy, all extending `AwtrixError`.
+- `src/firmware.ts` – `FirmwareUpdater`, over-the-air updates from the official releases (GitHub release API + OTA manifest on GitHub Pages). Uses its own axios instance, not `HttpTransport`, so device auth and headers never go to GitHub. Only the upload goes through `system.updateFirmware()`. Release and OTA URLs are options so tests can point them at a second `MockAwtrix`.
 
 ## Conventions that are easy to break
 

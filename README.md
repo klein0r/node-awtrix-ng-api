@@ -185,6 +185,19 @@ await awtrix.system.updateFirmware(await readFile('firmware-awtrix-ng.bin'));
 await awtrix.device.waitForOnline({ timeoutMs: 120_000 });
 ```
 
+Over-the-air updates from the official releases - `FirmwareUpdater` compares the device with the latest stable GitHub release, downloads the image named by `device.updateImage` and checks size and SHA-256 against the OTA manifest before uploading it. The device credentials are only sent to the device:
+
+```ts
+import { FirmwareUpdater } from 'awtrix-ng-api';
+
+const updater = new FirmwareUpdater(awtrix);
+const result = await updater.check(); // { available, currentVersion, latestVersion, update? }
+if (result.available) {
+  await updater.install(result.update); // or updater.download(result.update) for the verified bytes
+  await awtrix.device.waitForOnline({ timeoutMs: 180_000 });
+}
+```
+
 ## Error handling
 
 All errors extend `AwtrixError`. Validation problems are reported as rejected promises too, never as synchronous throws.
@@ -195,6 +208,7 @@ All errors extend `AwtrixError`. Validation problems are reported as rejected pr
 | `AwtrixConnectionError` | No answer: timeout, refused, DNS, reset, aborted | `kind`, `code`, `isTimeout` |
 | `AwtrixValidationError` | An argument was refused before sending | `field` |
 | `AwtrixResponseError` | The device sent a body that could not be parsed | `status`, `body` |
+| `AwtrixFirmwareError` | `FirmwareUpdater` found no valid update or the download failed validation | `reason`, `url`, `status` |
 
 ```ts
 import { AwtrixApiError, AwtrixConnectionError } from 'awtrix-ng-api';

@@ -187,6 +187,37 @@ export class AwtrixResponseError extends AwtrixError {
   }
 }
 
+/** Why a firmware update check or download failed. */
+export type AwtrixFirmwareErrorReason =
+  /** `device.updateImage` names no image published for over-the-air updates. */
+  | 'unsupportedImage'
+  /** The latest release is a draft, a prerelease or has no `x.y.z` tag. */
+  | 'noStableRelease'
+  /** The OTA manifest lists no valid image for the latest release. */
+  | 'invalidManifest'
+  /** The downloaded image does not match the manifest (size, SHA-256) or has a wrong header. */
+  | 'invalidImage'
+  /** GitHub answered with a non-2xx status. */
+  | 'httpError'
+  /** GitHub sent a body that is not valid JSON. */
+  | 'invalidResponse';
+
+/** A firmware update check or download from the official releases failed. */
+export class AwtrixFirmwareError extends AwtrixError {
+  readonly reason: AwtrixFirmwareErrorReason;
+  /** The URL of the failed request, if any. */
+  readonly url?: string;
+  /** HTTP status, for `httpError`. */
+  readonly status?: number;
+
+  constructor(reason: AwtrixFirmwareErrorReason, message: string, details: { url?: string; status?: number } = {}) {
+    super(`Firmware update: ${message}`);
+    this.reason = reason;
+    this.url = details.url;
+    this.status = details.status;
+  }
+}
+
 export function isAwtrixError(error: unknown): error is AwtrixError {
   return error instanceof AwtrixError;
 }

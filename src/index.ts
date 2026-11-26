@@ -8,11 +8,12 @@ export {
   AwtrixConnectionError,
   AwtrixValidationError,
   AwtrixResponseError,
+  AwtrixFirmwareError,
   isAwtrixError,
   isAwtrixApiError,
   isAwtrixConnectionError,
 } from './errors.js';
-export type { AwtrixErrorCode, AwtrixApiErrorDetails, AwtrixConnectionErrorKind } from './errors.js';
+export type { AwtrixErrorCode, AwtrixApiErrorDetails, AwtrixConnectionErrorKind, AwtrixFirmwareErrorReason } from './errors.js';
 
 export { AppsApi, type SwitchAppOptions } from './api/apps.js';
 export { AudioApi } from './api/audio.js';
@@ -31,5 +32,6 @@ export { VoiceApi } from './api/voice.js';
 export { rgb, hsv, packColor, unpackColor, toHexColor, parseHexColor } from './color.js';
 export { Draw } from './draw.js';
 export { isValidAppName } from './validation.js';
+export { FirmwareUpdater, compareFirmwareVersions, type FirmwareUpdaterOptions } from './firmware.js';
 
 export * from './types/index.js';

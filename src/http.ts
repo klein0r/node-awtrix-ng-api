@@ -218,9 +218,9 @@ export class HttpTransport {
 }
 
 /** What axios hands back: a string for `text`, a Buffer (Node.js) or ArrayBuffer for `arraybuffer`. */
-type RawBody = string | ArrayBuffer | ArrayBufferView | undefined;
+export type RawBody = string | ArrayBuffer | ArrayBufferView | undefined;
 
-function toBytes(raw: RawBody): Uint8Array {
+export function toBytes(raw: RawBody): Uint8Array {
   if (raw instanceof ArrayBuffer) return new Uint8Array(raw);
   if (ArrayBuffer.isView(raw)) return new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
   if (typeof raw === 'string') return new TextEncoder().encode(raw);
@@ -292,7 +292,7 @@ function toApiError(
   });
 }
 
-function toConnectionError(error: unknown, method: string, path: string): AwtrixError {
+export function toConnectionError(error: unknown, method: string, path: string): AwtrixError {
   if (error instanceof AwtrixError) return error;
   if (axios.isCancel(error)) {
     return new AwtrixConnectionError('aborted', method, path, 'request was aborted', 'ERR_CANCELED', error);

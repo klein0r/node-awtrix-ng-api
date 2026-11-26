@@ -21,6 +21,8 @@ export interface MockReply {
   headers?: Record<string, string>;
   /** Delay before answering, in ms. */
   delayMs?: number;
+  /** Announce the full `Content-Length`, send only this many bytes, then drop the connection. */
+  abortAfterBytes?: number;
 }
 
 export type Handler = (req: RecordedRequest) => MockReply | Promise<MockReply>;
@@ -107,6 +109,13 @@ export class MockAwtrix {
     } else if (reply.body !== undefined) {
       payload = JSON.stringify(reply.body);
       headers['Content-Type'] ??= 'application/json';
+    }
+    if (reply.abortAfterBytes !== undefined) {
+      const bytes = Buffer.from(payload);
+      headers['Content-Length'] = String(bytes.length);
+      res.writeHead(reply.status ?? 200, headers);
+      res.write(bytes.subarray(0, reply.abortAfterBytes), () => res.socket?.destroy());
+      return;
     }
     res.writeHead(reply.status ?? 200, headers);
     res.end(payload);
